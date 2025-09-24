@@ -12,7 +12,7 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       // define association here
       Transaccion.belongsTo(models.Control, { foreignKey: 'id_control' });
-      Transaccion.belongsTo(models.User, { foreignKey: 'id_user' });
+      Transaccion.belongsTo(models.Users, { foreignKey: 'id_user' });
     }
   }
   Transaccion.init({
@@ -28,7 +28,7 @@ module.exports = (sequelize, DataTypes) => {
     tableName: 'transaccion',
     timestamps: true,
     paranoid: true,
-    underscore: true,
+    underscored: true,
   });
   return Transaccion;
 };

@@ -14,17 +14,17 @@ module.exports = (sequelize, DataTypes) => {
       SystemUser.hasMany(models.Control, { foreignKey: 'id_system_users' });
     }
   }
-  SytemUser.init({
+  SystemUser.init({
     username: DataTypes.STRING,
     password: DataTypes.STRING,
-    role: DataTypes.ENUM
+    role: DataTypes.ENUM('ADMIN', 'USER')
   }, {
     sequelize,
     modelName: 'SystemUser',
     tableName: 'system_users',
     timestamps: true,
     paranoid: true,
-    underscore: true,
+    underscored: true, // <-- esto hace que Sequelize use created_at / updated_at
   });
   return SystemUser;
 };

@@ -1,20 +1,16 @@
 'use strict';
-const {
-  Model
-} = require('sequelize');
+const { Model } = require('sequelize');
+
 module.exports = (sequelize, DataTypes) => {
   class Consultas extends Model {
-    /**
-     * Helper method for defining associations.
-     * This method is not a part of Sequelize lifecycle.
-     * The `models/index` file will call this method automatically.
-     */
     static associate(models) {
-      // define association here
+      // define asociación con Users
       Consultas.belongsTo(models.Users, { foreignKey: 'id_user' });
     }
   }
-  Consulta.init({
+
+  // Usa el mismo nombre de la clase
+  Consultas.init({
     tipo_doc_user: DataTypes.STRING,
     num_doc_user: DataTypes.STRING,
     data: DataTypes.JSONB
@@ -24,7 +20,8 @@ module.exports = (sequelize, DataTypes) => {
     tableName: 'consultas',
     timestamps: true,
     paranoid: true,
-    underscore: true,
+    underscored: true, // <--- corregido
   });
-  return Consulta;
+
+  return Consultas;
 };

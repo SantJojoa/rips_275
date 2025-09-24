@@ -20,14 +20,14 @@ module.exports = (sequelize, DataTypes) => {
     periodo_fac: DataTypes.INTEGER,
     año: DataTypes.INTEGER,
     route: DataTypes.TEXT,
-    status: DataTypes.ENUM,
+    status: DataTypes.ENUM('ACT', 'INACT', 'ERROR'),
   }, {
     sequelize,
     modelName: 'Control',
     tableName: 'control',
     timestamps: false,
     paranoid: false,
-    underscore: false,
+    underscored: false,
   });
   return Control;
 };

@@ -38,7 +38,7 @@ module.exports = (sequelize, DataTypes) => {
     tableName: 'prestador',
     timestamps: false,
     paranoid: false,
-    underscore: false,
+    underscored: false,
   });
   return Prestador;
 };
