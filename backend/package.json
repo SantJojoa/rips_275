@@ -1,0 +1,14 @@
+{
+	"type": "module",
+	"dependencies": {
+		"dotenv": "^17.2.2",
+		"pg": "^8.16.3",
+		"pg-hstore": "^2.3.4",
+		"sequelize": "^6.37.7",
+		"xlsx": "^0.18.5"
+	},
+	"packageManager": "pnpm@10.17.0+sha512.fce8a3dd29a4ed2ec566fb53efbb04d8c44a0f05bc6f24a73046910fb9c3ce7afa35a0980500668fa3573345bd644644fa98338fa168235c80f4aa17aa17fbef",
+	"devDependencies": {
+		"sequelize-cli": "^6.6.3"
+	}
+}
