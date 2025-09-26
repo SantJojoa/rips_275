@@ -11,7 +11,7 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
-      SystemUser.hasMany(models.Control, { foreignKey: 'id_system_users' });
+      SystemUser.hasMany(models.Control, { foreignKey: 'id_system_user' });
     }
   }
   SystemUser.init({

@@ -27,8 +27,8 @@ module.exports = (sequelize, DataTypes) => {
     modelName: 'Transaccion',
     tableName: 'transaccion',
     timestamps: true,
-    paranoid: true,
-    underscored: true,
+    paranoid: false,
+    underscored: false,
   });
   return Transaccion;
 };

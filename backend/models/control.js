@@ -11,7 +11,7 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
-      Control.belongsTo(models.SystemUser, { foreignKey: 'id_system_users' });
+      Control.belongsTo(models.SystemUser, { foreignKey: 'id_system_user' });
       Control.belongsTo(models.Prestador, { foreignKey: 'id_prestador' });
     }
   }
@@ -25,7 +25,7 @@ module.exports = (sequelize, DataTypes) => {
     sequelize,
     modelName: 'Control',
     tableName: 'control',
-    timestamps: false,
+    timestamps: true,
     paranoid: false,
     underscored: false,
   });
