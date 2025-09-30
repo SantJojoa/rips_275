@@ -16,6 +16,8 @@ module.exports = (sequelize, DataTypes) => {
     }
   }
   Control.init({
+    id_system_user: DataTypes.INTEGER,
+    id_prestador: DataTypes.INTEGER,
     fecha_registro: DataTypes.DATE,
     periodo_fac: DataTypes.INTEGER,
     año: DataTypes.INTEGER,

@@ -18,8 +18,8 @@ module.exports = (sequelize, DataTypes) => {
     modelName: 'Procedimiento',
     tableName: 'procedimientos',
     timestamps: true,
-    paranoid: true,
-    underscored: true, // <--- corregido
+    paranoid: false,
+    underscored: false, // <--- corregido
   });
 
   return Procedimiento;

@@ -17,7 +17,7 @@ module.exports = (sequelize, DataTypes) => {
 
   Users.init({
     tipo_doc: DataTypes.STRING,
-    num_doc: DataTypes.INTEGER,
+    num_doc: DataTypes.STRING,
     tipo_usuario: DataTypes.STRING,
     fecha_nacimiento: DataTypes.DATE,
     cod_sexo: DataTypes.STRING,
@@ -31,8 +31,8 @@ module.exports = (sequelize, DataTypes) => {
     modelName: 'Users',
     tableName: 'users',
     timestamps: true,
-    paranoid: true,
-    underscored: true,
+    paranoid: false,
+    underscored: false,
   });
 
   return Users;
