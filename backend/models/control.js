@@ -18,7 +18,7 @@ module.exports = (sequelize, DataTypes) => {
   Control.init({
     id_system_user: DataTypes.INTEGER,
     id_prestador: DataTypes.INTEGER,
-    fecha_registro: DataTypes.DATE,
+    numero_radicado: DataTypes.STRING,
     periodo_fac: DataTypes.INTEGER,
     año: DataTypes.INTEGER,
     route: DataTypes.TEXT,
@@ -30,6 +30,17 @@ module.exports = (sequelize, DataTypes) => {
     timestamps: true,
     paranoid: false,
     underscored: false,
+    hooks: {
+      beforeCreate: (control, options) => {
+        // Inicializa vacío; se definirá luego con id real
+        control.numero_radicado = null;
+      },
+      afterCreate: async (control, options) => {
+        const year = control.createdAt ? new Date(control.createdAt).getFullYear() : new Date().getFullYear();
+        const numero = `${year}-${control.id}`;
+        await control.update({ numero_radicado: numero }, { transaction: options.transaction });
+      }
+    }
   });
   return Control;
 };

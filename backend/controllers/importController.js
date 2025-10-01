@@ -46,21 +46,52 @@ function resolveUserDocFromItem(item) {
     const tipo = pick(
         () => item?.tipoDocumentoIdentificacion,
         () => item?.tipoDocUsuario,
-        () => item?.usuario?.tipoDocumentoIdentificacion
+        () => item?.usuario?.tipoDocumentoIdentificacion,
+        () => item?.tipoDoc,
+        () => item?.tipo_documento,
+        () => item?.usuario?.tipoDoc
+
+
     );
     const num = pick(
         () => item?.numDocumentoIdentificacion,
         () => item?.numDocUsuario,
-        () => item?.usuario?.numDocumentoIdentificacion
+        () => item?.usuario?.numDocumentoIdentificacion,
+        () => item?.numDoc,
+        () => item?.numero_documento,
+        () => item?.usuario?.numDoc
     );
     return { tipo_doc: tipo, num_doc: num };
+}
+
+
+exports.uploadRipsJsonFile = async (req, res) => {
+    try {
+        if (!req.file) return res.status(400).json({ message: 'Falta archivo RIPS' });
+
+        const fs = require('fs');
+        const text = fs.readFileSync(req.file.path, 'utf8');
+        let dataObj = null;
+        try {
+            dataObj = JSON.parse(text);
+        } catch (error) {
+            return res.status(400).json({ message: 'Error al parsear el archivo RIPS', error: String(error) });
+        }
+        req.body = {
+            ...req.body,
+            data: dataObj,
+            route: req.file.path,
+        }
+        return exports.uploadRipsJson(req, res);
+    } catch (error) {
+        return res.status(500).json({ message: 'Error al procesar el JSON', error: String(error) });
+    }
 }
 
 exports.uploadRipsJson = async (req, res) => {
     const { id: id_system_user } = req.user || {};
     const {
         prestadorId: id_prestador,
-        fecha_registro,
         periodo_fac,
         anio,
         status = 'ACT',
@@ -96,7 +127,6 @@ exports.uploadRipsJson = async (req, res) => {
             });
         }
 
-        const fechaRegistro = fecha_registro ? new Date(fecha_registro) : new Date();
         const periodoFac = periodo_fac != null ? parseInt(periodo_fac, 10) : null;
         const anioInt = anio != null ? parseInt(anio, 10) : null;
         const statusNorm = ['ACT', 'INACT', 'ERROR'].includes(String(status).toUpperCase())
@@ -116,16 +146,69 @@ exports.uploadRipsJson = async (req, res) => {
             otrosServicios: 0,
         };
 
+        const userCache = new Map()
+
+        const usuariosArr =
+            ripsData.usuarios ||
+            ripsData.Usuarios ||
+            ripsData.users ||
+            ripsData.afiliados ||
+            [];
+
+        let principalUser = null;
+        if (Array.isArray(usuariosArr)) {
+            for (const u of usuariosArr) {
+                const tipo_doc = pick(
+                    () => u.tipoDocumentoIdentificacion,
+                    () => u.tipoDoc,
+                    () => u.tipo_documento
+                );
+                const num_doc = pick(
+                    () => u.numDocumentoIdentificacion,
+                    () => u.numDoc,
+                    () => u.numero_documento
+                );
+                if (tipo_doc && num_doc) {
+                    principalUser = await getOrCreateUserByDoc(null, userCache, tipo_doc, num_doc);
+                    break
+                }
+            }
+        }
+
+        if (!principalUser) {
+            const collections = [
+                'consultas',
+                'procedimientos',
+                'hospitalizaciones',
+                'recienNacidos',
+                'urgencias',
+                'medicamentos',
+                'otrosServicios',
+            ];
+            for (const key of collections) {
+                const arr = ripsData[key];
+                if (!Array.isArray(arr) || arr.length === 0) continue;
+                const item = arr[0]
+                const { tipo_doc, num_doc } = resolveUserDocFromItem(item)
+                if (tipo_doc && num_doc) {
+                    principalUser = await getOrCreateUserByDoc(null, userCache, tipo_doc, num_doc);
+                    break;
+                }
+            }
+        }
+
+
         await sequelize.transaction(async (t) => {
+
             // Crear Control
+            const routeFromBody = req.body.route;
             const control = await Control.create(
                 {
                     id_system_user,
                     id_prestador,
-                    fecha_registro: fechaRegistro,
                     periodo_fac: periodoFac,
                     ['año']: anioInt,
-                    route: 'API_UPLOAD',
+                    route: routeFromBody,
                     status: statusNorm,
                 },
                 { transaction: t }
@@ -133,21 +216,21 @@ exports.uploadRipsJson = async (req, res) => {
             created.controlId = control.id;
 
             // Crear Transaccion
+            const fechaRegistro = new Date()
             const trx = await Transaccion.create(
                 {
                     id_control: control.id,
+                    id_user: principalUser ? principalUser.id : null,
                     num_nit: parseInt(String(nit), 10),
                     num_factura: parseInt(String(numFactura), 10),
                     tipo_nota: String(tipoNota),
                     num_nota: String(numNota),
-                    fecha: fechaRegistro,
                 },
                 { transaction: t }
             );
             created.transaccionId = trx.id;
 
-            // Cache de usuarios por (tipo_doc|num_doc)
-            const userCache = new Map();
+            // Reutilizar el mismo userCache definido antes de la transacción
 
             // Crear/actualizar usuarios si vienen en el JSON
             const usuariosArr =
@@ -208,11 +291,18 @@ exports.uploadRipsJson = async (req, res) => {
                     if (!Array.isArray(arr)) continue;
 
                     console.log(`[IMPORT] Nested ${key} count:`, arr.length);
-
                     for (const item of arr) {
-                        // Usar únicamente el documento del usuario (paciente)
-                        const tipo = u?.tipoDocumentoIdentificacion;
-                        const num = u?.numDocumentoIdentificacion;
+                        // Usar el documento del usuario (paciente) del objeto de usuario con tolerancia a variantes
+                        const tipo = pick(
+                            () => u?.tipoDocumentoIdentificacion,
+                            () => u?.tipoDoc,
+                            () => u?.tipo_documento
+                        );
+                        const num = pick(
+                            () => u?.numDocumentoIdentificacion,
+                            () => u?.numDoc,
+                            () => u?.numero_documento
+                        );
                         if (!tipo || !num) continue;
 
                         const user = await getOrCreateUserByDoc(t, userCache, tipo, num);
