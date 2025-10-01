@@ -25,22 +25,50 @@ function pick(...options) {
 
 async function getOrCreateUserByDoc(t, cache, tipo_doc, num_doc, extra = {}) {
     const key = `${tipo_doc}|${num_doc}`;
-    if (cache.has(key)) return cache.get(key);
+    const applyUpdatesIfNeeded = async (user, extraObj) => {
+        if (!extraObj || typeof extraObj !== 'object') return user;
 
-    let user = await Users.findOne({ where: { tipo_doc, num_doc }, transaction: t });
-    if (!user) {
-        user = await Users.create(
-            {
-                tipo_doc,
-                num_doc,
-                ...extra,
-            },
-            { transaction: t }
-        );
+        const updates = {};
+
+        for (const [k, v] of Object.entries(extraObj)) {
+            if (v === undefined || v === null) continue;
+
+            if (user[k] === undefined || user[k] === null) updates[k] = v;
+        }
+
+        if (Object.keys(updates).length > 0) {
+            await user.update(updates, { transaction: t || undefined });
+            Object.assign(user, updates);
+        }
+        return user;
     }
+    if (cache.has(key)) {
+        const cached = cache.get(key);
+        await applyUpdatesIfNeeded(cached, extra);
+        return cached;
+    }
+    let user = await Users.findOne({ where: { tipo_doc, num_doc }, transaction: t || undefined });
+
+    if (user) {
+        user = await applyUpdatesIfNeeded(user, extra);
+        cache.set(key, user);
+        return user;
+    }
+
+    user = await Users.create(
+        {
+            tipo_doc,
+            num_doc,
+            ...extra,
+        },
+        { transaction: t || undefined }
+    )
     cache.set(key, user);
     return user;
 }
+
+
+
 
 function resolveUserDocFromItem(item) {
     const tipo = pick(
