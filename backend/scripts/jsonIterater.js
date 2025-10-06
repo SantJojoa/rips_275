@@ -84,7 +84,6 @@ async function main() {
         // Crear Control (metadatos de carga)
         const control = await Control.create({
             fecha_registro: fechaRegistro,
-            periodo_fac: periodoFac,
             ['año']: anio, // el modelo usa clave con ñ
             route: jsonPath,
             status: status,
@@ -95,15 +94,15 @@ async function main() {
             id_control: control.id,
             // id_user: null, // opcional si en el futuro se asocia un usuario
             num_nit: parseInt(String(nit), 10),
-            num_factura: parseInt(String(numFactura), 10),
-            // valor_favtura: null, // si luego se calcula
+            num_factura: String(numFactura),
+            // valor_favorta: null, // si luego se calcula
             tipo_nota: String(tipoNota),
             num_nota: String(numNota),
             fecha: fechaRegistro,
         }, { transaction: t });
     });
 
-    // Si deseas además iterar usuarios (solo logging por ahora)
+    // Si deseas adem s iterar usuarios (solo logging por ahora)
     if (Array.isArray(ripsData.usuarios)) {
         ripsData.usuarios.forEach((usuario, idx) => {
             console.log(`Usuario ${idx + 1}:`, {

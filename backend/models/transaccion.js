@@ -17,7 +17,7 @@ module.exports = (sequelize, DataTypes) => {
   }
   Transaccion.init({
     num_nit: DataTypes.INTEGER,
-    num_factura: DataTypes.INTEGER,
+    num_factura: DataTypes.STRING,
     valor_favtura: DataTypes.FLOAT,
     tipo_nota: DataTypes.STRING,
     num_nota: DataTypes.STRING,

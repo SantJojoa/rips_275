@@ -5,7 +5,6 @@ exports.searchByFactura = async (req, res) => {
     const { num_factura } = req.query;
 
     console.log('🔍 Buscando factura:', num_factura);
-
     if (!num_factura) {
         return res.status(400).json({ message: 'El número de factura es requerido' });
     }
@@ -19,7 +18,6 @@ exports.searchByFactura = async (req, res) => {
                     model: Control,
                     include: [
                         { model: Prestador },
-                        { model: db.SystemUser, attributes: ['id', 'username'] }
                     ]
                 },
                 {

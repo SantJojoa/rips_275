@@ -251,7 +251,7 @@ exports.uploadRipsJson = async (req, res) => {
             const existingTransaction = await Transaccion.findOne({
                 where: {
                     num_nit: parseInt(String(nit), 10),
-                    num_factura: parseInt(String(numFactura), 10)
+                    num_factura: String(numFactura)
                 },
                 transaction: t
             });
@@ -265,7 +265,7 @@ exports.uploadRipsJson = async (req, res) => {
                     id_control: control.id,
                     id_user: principalUser ? principalUser.id : null,
                     num_nit: parseInt(String(nit), 10),
-                    num_factura: parseInt(String(numFactura), 10),
+                    num_factura: String(numFactura),
                     tipo_nota: String(tipoNota),
                     num_nota: String(numNota),
                 },

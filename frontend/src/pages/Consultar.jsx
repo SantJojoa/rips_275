@@ -122,12 +122,12 @@ export default function Consultar() {
                             Número de Factura
                         </label>
                         <input
-                            type="number"
+                            type="text"
                             id="numFactura"
                             value={numFactura}
                             onChange={(e) => setNumFactura(e.target.value)}
                             onKeyPress={handleKeyPress}
-                            placeholder="Ej: 100245"
+                            placeholder="Ej: 100245 o FAC-001"
                             className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
                         />
                     </div>

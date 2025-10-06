@@ -31,7 +31,7 @@ module.exports = {
         type: Sequelize.INTEGER
       },
       num_factura: {
-        type: Sequelize.INTEGER
+        type: Sequelize.STRING
       },
       valor_favtura: {
         type: Sequelize.FLOAT
