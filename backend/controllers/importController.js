@@ -92,6 +92,43 @@ function resolveUserDocFromItem(item) {
     return { tipo_doc: tipo, num_doc: num };
 }
 
+// Función para procesar servicios de un usuario específico
+async function procesarServiciosUsuario(t, userCache, usuario, usuarioData, created) {
+    const servicios = usuarioData?.servicios || usuarioData?.Servicios || {};
+
+    // Procesar servicios anidados (consultas, procedimientos, etc.)
+    const nestedCollections = [
+        { key: 'consultas', Model: Consultas, counter: 'consultas' },
+        { key: 'procedimientos', Model: Procedimiento, counter: 'procedimientos' },
+        { key: 'hospitalizaciones', Model: Hospitalizaciones, counter: 'hospitalizaciones' },
+        { key: 'hospitalizacion', Model: Hospitalizaciones, counter: 'hospitalizaciones' },
+        { key: 'recienNacidos', Model: RecienNacido, counter: 'recienNacidos' },
+        { key: 'urgencias', Model: Urgencias, counter: 'urgencias' },
+        { key: 'medicamentos', Model: Medicamento, counter: 'medicamentos' },
+        { key: 'otrosServicios', Model: OtroServicio, counter: 'otrosServicios' },
+    ];
+
+    for (const { key, Model, counter } of nestedCollections) {
+        const arr = servicios[key];
+        if (!Array.isArray(arr)) continue;
+
+        console.log(`[IMPORT] Usuario ${usuario.tipo_doc} ${usuario.num_doc} - ${key}: ${arr.length} servicios`);
+
+        for (const item of arr) {
+            await Model.create(
+                {
+                    id_user: usuario.id,
+                    tipo_doc_user: usuario.tipo_doc,
+                    num_doc_user: String(usuario.num_doc),
+                    data: item,
+                },
+                { transaction: t }
+            );
+            created[counter] += 1;
+        }
+    }
+}
+
 
 exports.uploadRipsJsonFile = async (req, res) => {
     try {
@@ -176,61 +213,65 @@ exports.uploadRipsJson = async (req, res) => {
 
         const userCache = new Map()
 
-        const usuariosArr =
-            ripsData.usuarios ||
-            ripsData.Usuarios ||
-            ripsData.users ||
-            ripsData.afiliados ||
-            [];
+        const usuariosArr = ripsData.usuarios || ripsData.Usuarios || ripsData.users || ripsData.afiliados || [];
 
         let principalUser = null;
-        if (Array.isArray(usuariosArr)) {
-            for (const u of usuariosArr) {
-                const tipo_doc = pick(
-                    () => u.tipoDocumentoIdentificacion,
-                    () => u.tipoDoc,
-                    () => u.tipo_documento
-                );
-                const num_doc = pick(
-                    () => u.numDocumentoIdentificacion,
-                    () => u.numDoc,
-                    () => u.numero_documento
-                );
-                if (tipo_doc && num_doc) {
-                    principalUser = await getOrCreateUserByDoc(null, userCache, tipo_doc, num_doc);
-                    break
-                }
-            }
-        }
-
-        if (!principalUser) {
-            const collections = [
-                'consultas',
-                'procedimientos',
-                'hospitalizaciones',
-                'recienNacidos',
-                'urgencias',
-                'medicamentos',
-                'otrosServicios',
-            ];
-            for (const key of collections) {
-                const arr = ripsData[key];
-                if (!Array.isArray(arr) || arr.length === 0) continue;
-                const item = arr[0]
-                const { tipo_doc, num_doc } = resolveUserDocFromItem(item)
-                if (tipo_doc && num_doc) {
-                    principalUser = await getOrCreateUserByDoc(null, userCache, tipo_doc, num_doc);
-                    break;
-                }
-            }
-        }
-
-
         let control = null;
 
         await sequelize.transaction(async (t) => {
 
             console.log('[IMPORT] Iniciando transacción...');
+
+            // Procesar múltiples usuarios si existen
+            if (Array.isArray(usuariosArr) && usuariosArr.length > 0) {
+                console.log(`[IMPORT] Procesando ${usuariosArr.length} usuarios`);
+
+                for (const usuarioData of usuariosArr) {
+                    const tipo_doc = pick(
+                        () => usuarioData.tipoDocumentoIdentificacion,
+                        () => usuarioData.tipoDoc,
+                        () => usuarioData.tipo_documento
+                    );
+                    const num_doc = pick(
+                        () => usuarioData.numDocumentoIdentificacion,
+                        () => usuarioData.numDoc,
+                        () => usuarioData.numero_documento
+                    );
+
+                    if (tipo_doc && num_doc) {
+                        // Crear o encontrar el usuario
+                        const usuario = await getOrCreateUserByDoc(
+                            t,
+                            userCache,
+                            tipo_doc,
+                            num_doc,
+                            {
+                                tipo_usuario: pick(() => usuarioData.tipoUsuario),
+                                fecha_nacimiento: pick(() => usuarioData.fechaNacimiento),
+                                cod_sexo: pick(() => usuarioData.codSexo),
+                                cod_pais_residencia: pick(() => usuarioData.codPaisResidencia),
+                                cod_municipio_residencia: pick(() => usuarioData.codMunicipioResidencia),
+                                incapacidad: pick(() => usuarioData.incapacidad),
+                                consecutivo: pick(() => usuarioData.consecutivo),
+                                cod_pais_origen: pick(() => usuarioData.codPaisOrigen),
+                            }
+                        );
+
+                        // Si es el primer usuario, lo guardamos como principalUser para la transacción
+                        if (!principalUser) {
+                            principalUser = usuario;
+                        }
+
+                        created.usuarios += 1;
+
+                        // Procesar servicios específicos de este usuario
+                        await procesarServiciosUsuario(t, userCache, usuario, usuarioData, created);
+
+                        console.log(`[IMPORT] Usuario procesado: ${tipo_doc} ${num_doc}`);
+                    }
+                }
+            }
+
             const routeFromBody = req.body.route;
             console.log('[IMPORT] Creando control...', { id_system_user, id_prestador, periodoFac, anioInt, routeFromBody, statusNorm });
             control = await Control.create(
@@ -273,92 +314,7 @@ exports.uploadRipsJson = async (req, res) => {
             );
             created.transaccionId = trx.id;
 
-
-            const usuariosArr =
-                ripsData.usuarios ||
-                ripsData.Usuarios ||
-                ripsData.users ||
-                ripsData.afiliados ||
-                [];
-
-            for (const u of Array.isArray(usuariosArr) ? usuariosArr : []) {
-                const tipo_doc = pick(
-                    () => u.tipoDocumentoIdentificacion,
-                    () => u.tipoDoc,
-                    () => u.tipo_documento
-                );
-                const num_doc = pick(
-                    () => u.numDocumentoIdentificacion,
-                    () => u.numDoc,
-                    () => u.numero_documento
-                );
-                if (tipo_doc && num_doc) {
-                    await getOrCreateUserByDoc(
-                        t,
-                        userCache,
-                        tipo_doc,
-                        num_doc,
-                        {
-                            tipo_usuario: pick(() => u.tipoUsuario),
-                            fecha_nacimiento: pick(() => u.fechaNacimiento),
-                            cod_sexo: pick(() => u.codSexo),
-                            cod_pais_residencia: pick(() => u.codPaisResidencia),
-                            cod_municipio_residencia: pick(() => u.codMunicipioResidencia),
-                            incapacidad: pick(() => u.incapacidad),
-                            consecutivo: pick(() => u.consecutivo),
-                            cod_pais_origen: pick(() => u.codPaisOrigen),
-                        }
-                    );
-                    created.usuarios += 1;
-                }
-            }
-
-            for (const u of Array.isArray(usuariosArr) ? usuariosArr : []) {
-                const servicios = u?.Servicios || u?.servicios || {};
-                const nestedCollections = [
-                    { key: 'consultas', Model: Consultas, counter: 'consultas' },
-                    { key: 'procedimientos', Model: Procedimiento, counter: 'procedimientos' },
-                    { key: 'hospitalizaciones', Model: Hospitalizaciones, counter: 'hospitalizaciones' },
-                    { key: 'hospitalizacion', Model: Hospitalizaciones, counter: 'hospitalizaciones' },
-                    { key: 'recienNacidos', Model: RecienNacido, counter: 'recienNacidos' },
-                    { key: 'urgencias', Model: Urgencias, counter: 'urgencias' },
-                    { key: 'medicamentos', Model: Medicamento, counter: 'medicamentos' },
-                    { key: 'otrosServicios', Model: OtroServicio, counter: 'otrosServicios' },
-                ];
-
-                for (const { key, Model, counter } of nestedCollections) {
-                    const arr = servicios[key];
-                    if (!Array.isArray(arr)) continue;
-
-                    console.log(`[IMPORT] Nested ${key} count:`, arr.length);
-                    for (const item of arr) {
-                        const tipo = pick(
-                            () => u?.tipoDocumentoIdentificacion,
-                            () => u?.tipoDoc,
-                            () => u?.tipo_documento
-                        );
-                        const num = pick(
-                            () => u?.numDocumentoIdentificacion,
-                            () => u?.numDoc,
-                            () => u?.numero_documento
-                        );
-                        if (!tipo || !num) continue;
-
-                        const user = await getOrCreateUserByDoc(t, userCache, tipo, num);
-                        await Model.create(
-                            {
-                                id_user: user.id,
-                                tipo_doc_user: tipo,
-                                num_doc_user: String(num),
-                                data: item,
-                            },
-                            { transaction: t }
-                        );
-                        created[counter] += 1;
-                    }
-                }
-            }
-
+            // Procesar servicios raíz (no asociados a usuarios específicos)
             const collections = [
                 { key: 'consultas', Model: Consultas, counter: 'consultas' },
                 { key: 'procedimientos', Model: Procedimiento, counter: 'procedimientos' },
