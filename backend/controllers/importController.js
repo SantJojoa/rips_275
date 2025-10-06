@@ -226,11 +226,14 @@ exports.uploadRipsJson = async (req, res) => {
         }
 
 
+        let control = null;
+
         await sequelize.transaction(async (t) => {
 
-            // Crear Control
+            console.log('[IMPORT] Iniciando transacción...');
             const routeFromBody = req.body.route;
-            const control = await Control.create(
+            console.log('[IMPORT] Creando control...', { id_system_user, id_prestador, periodoFac, anioInt, routeFromBody, statusNorm });
+            control = await Control.create(
                 {
                     id_system_user,
                     id_prestador,
@@ -241,10 +244,22 @@ exports.uploadRipsJson = async (req, res) => {
                 },
                 { transaction: t }
             );
+            console.log('[IMPORT] Control creado con ID:', control.id);
             created.controlId = control.id;
 
-            // Crear Transaccion
-            const fechaRegistro = new Date()
+            // Validar si ya existe una factura con el mismo número y NIT
+            const existingTransaction = await Transaccion.findOne({
+                where: {
+                    num_nit: parseInt(String(nit), 10),
+                    num_factura: parseInt(String(numFactura), 10)
+                },
+                transaction: t
+            });
+
+            if (existingTransaction) {
+                throw new Error(`Ya existe una factura registrada con el número ${numFactura} para el NIT ${nit}. No se puede procesar una factura duplicada.`);
+            }
+
             const trx = await Transaccion.create(
                 {
                     id_control: control.id,
@@ -258,9 +273,7 @@ exports.uploadRipsJson = async (req, res) => {
             );
             created.transaccionId = trx.id;
 
-            // Reutilizar el mismo userCache definido antes de la transacción
 
-            // Crear/actualizar usuarios si vienen en el JSON
             const usuariosArr =
                 ripsData.usuarios ||
                 ripsData.Usuarios ||
@@ -300,7 +313,6 @@ exports.uploadRipsJson = async (req, res) => {
                 }
             }
 
-            // Procesar colecciones anidadas en usuarios[].Servicios.*
             for (const u of Array.isArray(usuariosArr) ? usuariosArr : []) {
                 const servicios = u?.Servicios || u?.servicios || {};
                 const nestedCollections = [
@@ -320,7 +332,6 @@ exports.uploadRipsJson = async (req, res) => {
 
                     console.log(`[IMPORT] Nested ${key} count:`, arr.length);
                     for (const item of arr) {
-                        // Usar el documento del usuario (paciente) del objeto de usuario con tolerancia a variantes
                         const tipo = pick(
                             () => u?.tipoDocumentoIdentificacion,
                             () => u?.tipoDoc,
@@ -348,7 +359,6 @@ exports.uploadRipsJson = async (req, res) => {
                 }
             }
 
-            // Mapeo de colecciones -> Modelo
             const collections = [
                 { key: 'consultas', Model: Consultas, counter: 'consultas' },
                 { key: 'procedimientos', Model: Procedimiento, counter: 'procedimientos' },
@@ -383,11 +393,35 @@ exports.uploadRipsJson = async (req, res) => {
             }
         });
 
+        console.log('[IMPORT] Transacción completada exitosamente');
+
+        // Recargar el control para obtener el numero_radicado actualizado
+        console.log('[IMPORT] Recargando control para obtener numero_radicado...');
+        await control.reload();
+        console.log('[IMPORT] Control recargado - numero_radicado:', control.numero_radicado);
+
         return res.status(201).json({
             message: 'Carga realizada correctamente',
-            created,
+            radicado: control.numero_radicado || `${new Date().getFullYear()}-${control.id}`,
+            controlId: control.id,
+            created: {
+                controlId: control.id,
+                transaccionId: created.transaccionId || null,
+                usuarios: created.usuarios || 0,
+                consultas: created.consultas || 0,
+                procedimientos: created.procedimientos || 0,
+                hospitalizaciones: created.hospitalizaciones || 0,
+                recienNacidos: created.recienNacidos || 0,
+                urgencias: created.urgencias || 0,
+                medicamentos: created.medicamentos || 0,
+                otrosServicios: created.otrosServicios || 0,
+            }
         });
     } catch (error) {
-        return res.status(500).json({ message: 'Error al procesar el JSON', error: String(error) });
+        console.error('[IMPORT] Error durante el proceso de importación:', error);
+        return res.status(500).json({
+            message: 'Error al procesar el JSON',
+            error: process.env.NODE_ENV === 'development' ? String(error) : 'Error interno del servidor'
+        });
     }
 };

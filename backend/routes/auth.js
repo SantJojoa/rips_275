@@ -1,7 +1,8 @@
 const express = require("express")
-const { register, login } = require('../controllers/authController.js')
+const { register, login, getProfile } = require('../controllers/authController.js')
 const { authenticate, authorize } = require('../middlewares/auth.js')
 const { uploadRipsJson, uploadRipsJsonFile } = require('../controllers/importController.js')
+const { searchByFactura } = require('../controllers/queryControllers.js')
 const db = require('../models');
 const multer = require('multer');
 
@@ -36,12 +37,11 @@ router.get('/debug/prestador/:id', authenticate, authorize, async (req, res) => 
 
 router.post('/register', register);
 router.post('/login', login);
+router.get('/profile', authenticate, getProfile);
 
 // Rutas protegidas (subir facturas)
 router.post('/upload-json', authenticate, authorize, uploadRipsJson);
 router.post('/upload-json-file', authenticate, authorize, upload.single('file'), uploadRipsJsonFile);
 
-// Debug: listar y buscar prestadores
-
-
+router.get('/search/factura', authenticate, searchByFactura);
 module.exports = router;

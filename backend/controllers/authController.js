@@ -11,10 +11,17 @@ dotenv.config();
 const SALT_ROUNDS = 10;
 
 const register = async (req, res) => {
-    const { username, password, role = 'USER' } = req.body;
+    const { username, nombres, apellidos, cedula, password, role = 'USER' } = req.body;
     try {
         const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
-        const user = await SystemUser.create({ username, password: hashedPassword, role });
+        const user = await SystemUser.create({
+            username,
+            nombres,
+            apellidos,
+            cedula,
+            password: hashedPassword,
+            role
+        });
         res.status(201).json({ message: 'Usuario creado exitosamente', user });
     } catch (error) {
         res.status(500).json({ message: 'Error al crear el usuario', error });
@@ -31,7 +38,14 @@ const login = async (req, res) => {
         if (!match) return res.status(401).json({ message: 'Contraseña incorrecta' });
 
         const token = jwt.sign(
-            { id: user.id, username: user.username, role: user.role },
+            {
+                id: user.id,
+                username: user.username,
+                nombres: user.nombres,
+                apellidos: user.apellidos,
+                cedula: user.cedula,
+                role: user.role
+            },
             process.env.JWT_SECRET,
             { expiresIn: "8h" }
         );
@@ -41,4 +55,17 @@ const login = async (req, res) => {
     }
 };
 
-module.exports = { register, login };
+const getProfile = async (req, res) => {
+    try {
+        const user = await SystemUser.findByPk(req.user.id, {
+            attributes: { exclude: ['password'] }
+        });
+        if (!user) return res.status(404).json({ message: 'Usuario no encontrado' });
+
+        res.status(200).json({ user });
+    } catch (error) {
+        res.status(500).json({ message: 'Error al obtener perfil', error });
+    }
+};
+
+module.exports = { register, login, getProfile };

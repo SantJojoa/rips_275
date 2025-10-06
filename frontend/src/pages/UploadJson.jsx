@@ -141,6 +141,9 @@ export default function UploadJson() {
                 return;
             }
             setMsg(data?.message || 'Carga realizada correctamente');
+            if (data?.radicado) {
+                setMsg(prev => `${prev} - Radicado: ${data.radicado}`);
+            }
         } finally {
             setLoading(false)
         }

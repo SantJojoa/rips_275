@@ -1,9 +1,11 @@
 {
     "cSpell.words": [
         "Hospitalizacion",
+        "IDSN",
         "Recien",
         "systemuser",
         "transaccion",
         "Transaccion"
-    ]
+    ],
+    "postman.settings.dotenv-detection-notification-visibility": false
 }
