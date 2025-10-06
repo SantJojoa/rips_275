@@ -168,7 +168,12 @@ export default function Consultar() {
                             { label: 'Número de Factura', value: data.transaccion?.num_factura },
                             { label: 'NIT', value: data.transaccion?.num_nit },
                             { label: 'Prestador', value: data.control?.Prestador?.nombre_prestador || 'N/A' },
-                            { label: 'Usuario', value: `${data.usuario?.tipo_doc} ${data.usuario?.num_doc}` },
+                            { 
+                                label: 'Usuario', 
+                                value: data.usuario 
+                                    ? `${data.usuario.tipo_doc || 'Sin tipo'} ${data.usuario.num_doc || 'Sin número'}`.trim() 
+                                    : 'No especificado' 
+                            },
                             { label: 'Periodo', value: `${data.control?.periodo_fac}/${data.control?.año}` },
                             { label: 'Estado', value: data.control?.status }
                         ].map((item, i) => (
