@@ -304,7 +304,6 @@ exports.uploadRipsJson = async (req, res) => {
             const trx = await Transaccion.create(
                 {
                     id_control: control.id,
-                    id_user: principalUser ? principalUser.id : null,
                     num_nit: parseInt(String(nit), 10),
                     num_factura: String(numFactura),
                     tipo_nota: String(tipoNota),
@@ -313,6 +312,13 @@ exports.uploadRipsJson = async (req, res) => {
                 { transaction: t }
             );
             created.transaccionId = trx.id;
+
+            // Asociar todos los usuarios procesados a la transacción
+            const processedUsers = Array.from(userCache.values());
+            if (processedUsers.length > 0) {
+                await trx.addUsers(processedUsers, { transaction: t });
+                console.log(`[IMPORT] Asociados ${processedUsers.length} usuarios a la transacción`);
+            }
 
             // Procesar servicios raíz (no asociados a usuarios específicos)
             const collections = [

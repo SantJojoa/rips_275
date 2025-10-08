@@ -12,7 +12,14 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       // define association here
       Transaccion.belongsTo(models.Control, { foreignKey: 'id_control' });
-      Transaccion.belongsTo(models.Users, { foreignKey: 'id_user' });
+      Transaccion.belongsToMany(models.Users, {
+        through: {
+          model: models.UserTransaction,
+          timestamps: false
+        },
+        foreignKey: 'id_transaction',
+        otherKey: 'id_user'
+      });
     }
   }
   Transaccion.init({
