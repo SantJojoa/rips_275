@@ -1,4 +1,5 @@
 import { useState } from "react";
+import DataTable from 'react-data-table-component';
 import { apiFetch } from "../lib/api";
 
 export default function Consultar() {
@@ -8,6 +9,7 @@ export default function Consultar() {
     const [data, setData] = useState(null);
     const [activeTab, setActiveTab] = useState('consultas');
     const [selectedUserId, setSelectedUserId] = useState(null);
+    const [visibleColsByTab, setVisibleColsByTab] = useState({});
 
     const buscarFactura = async (userId = null) => {
         if (!numFactura.trim()) {
@@ -53,7 +55,7 @@ export default function Consultar() {
 
     const handleKeyPress = (e) => e.key === 'Enter' && buscarFactura();
 
-    const renderTabla = (datos, titulo) => {
+    const renderTabla = (datos, tabId, titulo) => {
         if (!datos || datos.length === 0) {
             return (
                 <div className="text-center py-6 text-gray-500 italic">
@@ -62,53 +64,140 @@ export default function Consultar() {
             );
         }
 
-        const primerItem = datos[0];
-        let columnas = Object.keys(primerItem).filter(k => k !== 'data');
+        // Construir lista de columnas, excluyendo campos de BD comunes
+        const primerItem = datos[0] || {};
+        const forbidden = [/^id$/i, /^id_user$/i, /^user_id$/i, /^iduser$/i, /^createdAt$/i, /^updatedAt$/i, /^created_at$/i, /^updated_at$/i];
 
-        if (primerItem.data) {
-            const dataKeys = Object.keys(primerItem.data);
-            columnas = [...columnas, ...dataKeys.map(k => `data.${k}`)];
-        }
+        const baseKeys = Object.keys(primerItem).filter(k => k !== 'data' && !forbidden.some(rx => rx.test(k)));
+        const dataKeys = primerItem.data ? Object.keys(primerItem.data).filter(k => !forbidden.some(rx => rx.test(k))) : [];
+        // Construir lista de columnas posibles (identificadores únicos)
+        const humanize = (s) => String(s).replace(/^data\./, '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        const possibleCols = [
+            ...baseKeys.map(k => ({ id: k, label: humanize(k), type: 'base', key: k })),
+            ...dataKeys.map(k => ({ id: `data.${k}`, label: humanize(k), type: 'data', key: k }))
+        ];
+
+        // Custom styles for react-data-table-component (visually nicer)
+        const customStyles = {
+            headRow: {
+                style: {
+                    backgroundColor: '#2563EB', // blue-600
+                    borderBottomWidth: '0',
+                }
+            },
+            headCells: {
+                style: {
+                    color: '#FFFFFF',
+                    fontSize: '12px',
+                    fontWeight: '700',
+                    paddingLeft: '16px',
+                    paddingRight: '16px',
+                }
+            },
+            rows: {
+                style: {
+                    minHeight: '48px',
+                }
+            },
+            cells: {
+                style: {
+                    paddingLeft: '16px',
+                    paddingRight: '16px',
+                }
+            },
+            pagination: {
+                style: {
+                    borderTopWidth: '1px',
+                    borderTopColor: '#E5E7EB'
+                }
+            }
+        };
+
+        // Visible columns for this tab (if user hasn't chosen, default = all possibleCols)
+        const visibleIds = visibleColsByTab[tabId] ?? possibleCols.map(c => c.id);
+
+        const toggleColumn = (colId) => {
+            setVisibleColsByTab(prev => {
+                const prevSet = new Set(prev[tabId] ?? possibleCols.map(c => c.id));
+                if (prevSet.has(colId)) prevSet.delete(colId); else prevSet.add(colId);
+                return { ...prev, [tabId]: Array.from(prevSet) };
+            });
+        };
+
+        const selectAll = () => setVisibleColsByTab(prev => ({ ...prev, [tabId]: possibleCols.map(c => c.id) }));
+        const clearAll = () => setVisibleColsByTab(prev => ({ ...prev, [tabId]: [] }));
+
+        const columns = possibleCols
+            .filter(c => visibleIds.includes(c.id))
+            .map(c => {
+                if (c.type === 'base') {
+                    return {
+                        name: c.label,
+                        selector: row => row[c.key],
+                        sortable: true,
+                        cell: row => {
+                            let valor = row[c.key];
+                            if (valor && typeof valor === 'string' && /^\d{4}-\d{2}-\d{2}/.test(valor)) {
+                                try { valor = new Date(valor).toLocaleString('es-ES'); } catch { void 0; }
+                            }
+                            return <div className="text-sm text-gray-800">{valor ?? ''}</div>;
+                        }
+                    };
+                }
+
+                return {
+                    name: c.label,
+                    selector: row => row.data?.[c.key],
+                    sortable: true,
+                    cell: row => {
+                        let valor = row.data?.[c.key];
+                        if (valor && typeof valor === 'string' && /^\d{4}-\d{2}-\d{2}/.test(valor)) {
+                            try { valor = new Date(valor).toLocaleString('es-ES'); } catch { void 0; }
+                        }
+                        return <div className="text-sm text-gray-800">{valor ?? ''}</div>;
+                    }
+                };
+            });
 
         return (
-            <div className="overflow-x-auto rounded-lg shadow border border-gray-200">
-                <table className="min-w-full bg-white rounded-lg">
-                    <thead className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-                        <tr>
-                            {columnas.map((col, index) => (
-                                <th
-                                    key={index}
-                                    className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide"
-                                >
-                                    {col.replace('data.', '')}
-                                </th>
-                            ))}
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                        {datos.map((item, rowIndex) => (
-                            <tr key={rowIndex} className="hover:bg-gray-50 transition">
-                                {columnas.map((col, colIndex) => {
-                                    let valor = col.startsWith('data.')
-                                        ? item.data?.[col.replace('data.', '')] || ''
-                                        : item[col] || '';
-
-                                    if (valor && typeof valor === 'string' && valor.match(/^\d{4}-\d{2}-\d{2}/)) {
-                                        try {
-                                            valor = new Date(valor).toLocaleString('es-ES');
-                                        } catch { }
-                                    }
-
-                                    return (
-                                        <td key={colIndex} className="px-4 py-3 text-sm text-gray-800">
-                                            {valor}
-                                        </td>
-                                    );
-                                })}
-                            </tr>
+            <div>
+                {/* Column filter checkboxes */}
+                <div className="mb-4 p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
+                    <div className="flex items-center justify-between mb-3">
+                        <h4 className="text-sm font-semibold text-gray-800">Columnas</h4>
+                        <div className="flex gap-2">
+                            <button type="button" onClick={selectAll} className="px-2 py-1 bg-blue-600 text-white rounded-md text-xs hover:bg-blue-700">Seleccionar todo</button>
+                            <button type="button" onClick={clearAll} className="px-2 py-1 bg-white text-red-600 border border-red-100 rounded-md text-xs hover:bg-red-50">Limpiar</button>
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                        {possibleCols.map(col => (
+                            <label key={col.id} className="flex items-center gap-3 p-2 bg-gray-50 hover:bg-gray-100 rounded-md border border-gray-100">
+                                <input
+                                    type="checkbox"
+                                    checked={visibleIds.includes(col.id)}
+                                    onChange={() => toggleColumn(col.id)}
+                                    className="w-4 h-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                                />
+                                <span className="text-sm text-gray-700">{col.label}</span>
+                            </label>
                         ))}
-                    </tbody>
-                </table>
+                    </div>
+                </div>
+
+                <div className="rounded-lg shadow border border-gray-200 bg-white overflow-x-auto">
+                    <DataTable
+                        columns={columns}
+                        data={datos}
+                        pagination
+                        highlightOnHover
+                        dense
+                        noHeader
+                        persistTableHead
+                        customStyles={customStyles}
+                        noDataComponent={<div className="p-6 text-center text-gray-500">No hay datos disponibles</div>}
+                    />
+                </div>
             </div>
         );
     };
@@ -266,7 +355,7 @@ export default function Consultar() {
                         <div className="p-6">
                             {tabs.map((tab) => (
                                 <div key={tab.id} className={activeTab === tab.id ? 'block' : 'hidden'}>
-                                    {renderTabla(tab.data, tab.label)}
+                                    {renderTabla(tab.data, tab.id, tab.label)}
                                 </div>
                             ))}
                         </div>
