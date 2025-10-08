@@ -1,8 +1,8 @@
 const db = require('../models');
-const { sequelize, Transaccion, Users, Control, Prestador, Consultas, Procedimiento, Hospitalizaciones, RecienNacido, Urgencias, Medicamento, OtroServicio } = db;
+const { sequelize, Transaccion, Users, Control, Prestador, Consultas, Procedimiento, Hospitalizaciones, RecienNacido, Urgencias, Medicamento, OtroServicio, UserTransaction } = db;
 
 exports.searchByFactura = async (req, res) => {
-    const { num_factura } = req.query;
+    const { num_factura, user_id } = req.query;
 
     console.log(' Buscando factura:', num_factura);
     if (!num_factura) {
@@ -10,11 +10,11 @@ exports.searchByFactura = async (req, res) => {
     }
 
     try {
-        // Buscar transacción por número de factura (asegurando que se trate como string)
+        // Buscar transacción y usuarios asociados
         const transaccion = await Transaccion.findOne({
             where: sequelize.where(
-                sequelize.fn('trim', sequelize.col('num_factura')), 
-                '=', 
+                sequelize.fn('trim', sequelize.col('num_factura')),
+                '=',
                 num_factura.toString().trim()
             ),
             include: [
@@ -26,7 +26,7 @@ exports.searchByFactura = async (req, res) => {
                 },
                 {
                     model: Users,
-                    as: 'User',
+                    through: UserTransaction,
                     required: false,
                     attributes: ['id', 'tipo_doc', 'num_doc', 'tipo_usuario', 'cod_sexo'] // Only include existing columns
                 }
@@ -39,8 +39,28 @@ exports.searchByFactura = async (req, res) => {
             return res.status(404).json({ message: 'No se encontró la factura' });
         }
 
-        // Buscar todos los datos relacionados
-        const userId = transaccion.id_user;
+        // Si no hay usuarios asociados, retornar un error
+        if (!transaccion.Users || transaccion.Users.length === 0) {
+            return res.status(404).json({ message: 'No se encontraron usuarios asociados a esta factura' });
+        }
+
+        // Si hay múltiples usuarios y no se especificó uno, retornar la lista de usuarios
+        if (transaccion.Users.length > 1 && !user_id) {
+            return res.status(200).json({
+                transaccion,
+                control: transaccion.Control,
+                users: transaccion.Users.map(user => ({
+                    id: user.id,
+                    tipo_doc: user.tipo_doc,
+                    num_doc: user.num_doc,
+                    tipo_usuario: user.tipo_usuario
+                })),
+                multipleUsers: true
+            });
+        }
+
+        // Si se especificó un usuario o solo hay uno, buscar sus datos
+        const userId = user_id || transaccion.Users[0].id;
         console.log('👤 User ID:', userId);
 
         const [consultas, procedimientos, hospitalizaciones, recienNacidos, urgencias, medicamentos, otrosServicios] = await Promise.all([
@@ -63,10 +83,13 @@ exports.searchByFactura = async (req, res) => {
             otrosServicios: otrosServicios.length
         });
 
+        // Encontrar el usuario específico de la lista de usuarios
+        const selectedUser = transaccion.Users.find(user => user.id === parseInt(userId));
+
         const response = {
             transaccion,
             control: transaccion.Control,
-            usuario: transaccion.User,
+            usuario: selectedUser, // Enviamos el usuario seleccionado
             consultas,
             procedimientos,
             hospitalizaciones,

@@ -7,8 +7,9 @@ export default function Consultar() {
     const [loading, setLoading] = useState(false);
     const [data, setData] = useState(null);
     const [activeTab, setActiveTab] = useState('consultas');
+    const [selectedUserId, setSelectedUserId] = useState(null);
 
-    const buscarFactura = async () => {
+    const buscarFactura = async (userId = null) => {
         if (!numFactura.trim()) {
             setError('Por favor ingrese un número de factura');
             return;
@@ -16,15 +17,33 @@ export default function Consultar() {
 
         setLoading(true);
         setError(null);
-        setData(null);
 
         try {
-            const response = await apiFetch(`/api/auth/search/factura?num_factura=${numFactura}`);
+            const url = `/api/auth/search/factura?num_factura=${numFactura}${userId ? `&user_id=${userId}` : ''}`;
+            const response = await apiFetch(url);
             const result = await response.json();
 
             if (!response.ok) throw new Error(result.message || 'Error al buscar factura');
 
-            setData(result);
+            console.log('Datos recibidos:', result); // Para debug
+
+            if (!userId) {
+                // Primera búsqueda: guardamos todo el resultado
+                setData(result);
+            } else {
+                // Búsqueda con userId: actualizar datos manteniendo la lista de usuarios
+                setData(prevData => {
+                    if (!prevData) return result;
+                    const newData = {
+                        ...result,
+                        users: prevData.users || result.users || []
+                    };
+                    console.log('Datos actualizados:', newData); // Para debug
+                    return newData;
+                });
+            }
+
+            setSelectedUserId(userId);
         } catch (err) {
             setError(err.message);
         } finally {
@@ -156,8 +175,31 @@ export default function Consultar() {
                 </div>
             )}
 
+            {/* Selector de Usuario */}
+            {data?.users && data.users.length > 0 && (
+                <div className="bg-white rounded-xl shadow-md p-6 mb-6">
+                    <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                        Usuario Seleccionado
+                    </h3>
+                    <div className="flex flex-col gap-4">
+                        <select
+                            value={selectedUserId || ""}
+                            onChange={(e) => buscarFactura(e.target.value)}
+                            className="w-full px-4 py-3 border border-gray-300 bg-white rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                        >
+                            <option value="" disabled>Seleccione un usuario</option>
+                            {data.users.map(user => (
+                                <option key={user.id} value={user.id}>
+                                    {user.tipo_doc} {user.num_doc} - {user.tipo_usuario}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+            )}
+
             {/* Datos */}
-            {data && (
+            {data && !data.pendingUserSelection && (
                 <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
                     <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6">
                         <h3 className="text-2xl font-bold text-white">Información de la Factura</h3>
@@ -168,11 +210,26 @@ export default function Consultar() {
                             { label: 'Número de Factura', value: data.transaccion?.num_factura },
                             { label: 'NIT', value: data.transaccion?.num_nit },
                             { label: 'Prestador', value: data.control?.Prestador?.nombre_prestador || 'N/A' },
-                            { 
-                                label: 'Usuario', 
-                                value: data.usuario 
-                                    ? `${data.usuario.tipo_doc || 'Sin tipo'} ${data.usuario.num_doc || 'Sin número'}`.trim() 
-                                    : 'No especificado' 
+                            {
+                                label: 'Usuario',
+                                value: (() => {
+                                    if (!data) return 'No especificado';
+
+                                    // Si tenemos un usuario específico
+                                    if (data.usuario) {
+                                        return `${data.usuario.tipo_doc || 'Sin tipo'} ${data.usuario.num_doc || 'Sin número'} - ${data.usuario.tipo_usuario || ''}`.trim();
+                                    }
+
+                                    // Si tenemos múltiples usuarios y uno está seleccionado
+                                    if (data.users && selectedUserId) {
+                                        const selectedUser = data.users.find(u => u.id === Number(selectedUserId));
+                                        if (selectedUser) {
+                                            return `${selectedUser.tipo_doc || 'Sin tipo'} ${selectedUser.num_doc || 'Sin número'} - ${selectedUser.tipo_usuario || ''}`.trim();
+                                        }
+                                    }
+
+                                    return 'No especificado';
+                                })()
                             },
                             { label: 'Periodo', value: `${data.control?.periodo_fac}/${data.control?.año}` },
                             { label: 'Estado', value: data.control?.status }
