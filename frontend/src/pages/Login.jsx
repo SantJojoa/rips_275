@@ -39,7 +39,7 @@ export default function Login() {
             <div className='w-full max-w-sm rounded-2xl bg-white/80 backdrop-blur-md shadow-xl border border-slate-200'>
                 <div className='p-8'>
                     <img
-                        src="../../public/logo-instituto.png"
+                        src="logo-instituto.png"
                         alt="Logo IDSN"
                         className="mx-auto mb-6 h-30 w-auto object-contain drop-shadow-md"
                     />

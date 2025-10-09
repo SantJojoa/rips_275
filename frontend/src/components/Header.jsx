@@ -16,7 +16,7 @@ export default function Header() {
             <div className="flex items-center gap-5">
                 <span className="flex items-center justify-center p-2">
                     <img
-                        src="../../public/logo-instituto.png"
+                        src="logo-instituto.png"
                         alt="Logo IDSN"
                         className="h-12 w-auto object-contain drop-shadow-lg"
                     />
@@ -30,8 +30,14 @@ export default function Header() {
                 </div>
             </div>
             <div className="flex items-center gap-6">
+
                 <span className="flex items-center gap-2 text-base text-slate-700 bg-gradient-to-r from-slate-100 to-slate-200 px-4 py-2 rounded-full border border-slate-200 shadow-sm font-medium">
-                    <span className="inline-block w-2 h-2 bg-green-var rounded-full mr-1"></span>
+                    <img src="user-icon.svg" alt="" />
+
+                    <span className="inline-block w-2 h-2 bg-green-var rounded-full mr-1">
+
+                    </span>
+
                     {user?.nombres && user?.apellidos ? `${user.nombres} ${user.apellidos}` : user?.username}
                     <span className="ml-1 text-slate-500 font-semibold">({user?.role})</span>
                 </span>
@@ -39,7 +45,7 @@ export default function Header() {
                     onClick={logout}
                     className="px-5 py-2 rounded-full bg-blue-var text-white text-base font-bold shadow-lg hover:bg-blue-light-var transition-all duration-200 cursor-pointer border-0 focus:outline-none focus:ring-2 focus:ring-blue-var/40"
                 >
-                    Salir
+                    <img src="logout-icon.svg" alt="" />
                 </button>
             </div>
         </header>
