@@ -1,7 +1,7 @@
 import { getToken, clearToken } from './auth';
 
 export async function apiFetch(path, options = {}) {
-    const baseURL = 'http://localhost:3000'; // URL del backend
+    const baseURL = 'http://localhost:3000';
     const fullPath = path.startsWith('http') ? path : `${baseURL}${path}`;
 
     const headers = { ...options.headers || {} };
