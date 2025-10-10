@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { getUser, isAdmin, clearToken } from '../lib/auth';
+import { House, LogOut } from "lucide-react";
 
 export default function Header() {
     const navigate = useNavigate();
@@ -12,40 +13,55 @@ export default function Header() {
     };
 
     return (
-        <header className="flex items-center justify-between px-10 py-4 bg-white/90 backdrop-blur-lg shadow-lg sticky top-0 z-30">
-            <div className="flex items-center gap-5">
-                <span className="flex items-center justify-center p-2">
-                    <img
-                        src="logo-instituto.png"
-                        alt="Logo IDSN"
-                        className="h-12 w-auto object-contain drop-shadow-lg"
-                    />
-                </span>
-                <div>
-                    <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+        <header className="flex items-center justify-between px-6 py-2 bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-30">
+            <div className="flex items-center gap-3">
+                <img
+                    src="logo-instituto.png"
+                    alt="Logo IDSN"
+                    className="h-8 w-auto object-contain"
+                />
+
+                <div className="leading-tight">
+                    <h1 className="text-lg font-semibold text-slate-800 flex items-center gap-1">
                         Panel de Control
-                        <span className="ml-2 text-green-var bg-green-50 px-2 py-0.5 rounded-lg font-semibold shadow-sm text-xl">Sistema RIPS</span>
+                        <span className="ml-1 text-green-var bg-green-50 px-2 py-0.5 rounded-md font-medium text-sm">
+                            Sistema FEV-RIPS
+                        </span>
                     </h1>
-                    <span className="block text-xs text-slate-500 mt-1 font-medium tracking-wide">Instituto Departamental de Salud de Nariño</span>
+                    <span className="block text-[11px] text-slate-500 font-medium">
+                        Instituto Departamental de Salud de Nariño
+                    </span>
                 </div>
             </div>
-            <div className="flex items-center gap-6">
 
-                <span className="flex items-center gap-2 text-base text-slate-700 bg-gradient-to-r from-slate-100 to-slate-200 px-4 py-2 rounded-full border border-slate-200 shadow-sm font-medium">
-                    <img src="user-icon.svg" alt="" />
-
-                    <span className="inline-block w-2 h-2 bg-green-var rounded-full mr-1">
-
+            {/* Datos del usuario y botones */}
+            <div className="flex items-center gap-4">
+                <span className="flex items-center gap-2 text-sm text-slate-700 bg-slate-50 px-3 py-1.5 rounded-full border border-slate-200">
+                    <img src="user-icon.svg" alt="" className="w-4 h-4 opacity-70" />
+                    <span className="inline-block w-2 h-2 bg-green-var rounded-full" />
+                    <span className="font-medium">
+                        {user?.nombres && user?.apellidos
+                            ? `${user.nombres} ${user.apellidos}`
+                            : user?.username}
                     </span>
-
-                    {user?.nombres && user?.apellidos ? `${user.nombres} ${user.apellidos}` : user?.username}
-                    <span className="ml-1 text-slate-500 font-semibold">({user?.role})</span>
+                    <span className="text-slate-400">({user?.role})</span>
                 </span>
+
+                <button
+                    onClick={() => navigate('/dashboard')}
+                    className="group p-2 rounded-full border border-green-500 text-green-500 hover:bg-green-500 hover:text-white hover:border-green-600 transition-all duration-200 ease-in-out cursor-pointer"
+                    title="Ir al Dashboard"
+                >
+                    <House className="w-5 h-5 stroke-current transition-colors duration-200" />
+                </button>
+
                 <button
                     onClick={logout}
-                    className="px-5 py-2 rounded-full bg-blue-var text-white text-base font-bold shadow-lg hover:bg-blue-light-var transition-all duration-200 cursor-pointer border-0 focus:outline-none focus:ring-2 focus:ring-blue-var/40"
+                    className="group p-2 rounded-full border border-red-500 bg-red-500 text-white hover:bg-transparent hover:text-red-500 hover:border-red-500 transition-all duration-200 cursor-pointer"
+                    title="Cerrar sesión"
                 >
-                    <img src="logout-icon.svg" alt="" />
+                    <LogOut className="w-5 h-5 stroke-current transition-colors duration-200" />
+
                 </button>
             </div>
         </header>
