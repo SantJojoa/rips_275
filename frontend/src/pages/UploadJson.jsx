@@ -40,36 +40,27 @@ export default function UploadJson() {
             setJsonText('');
         }
     };
+
     const preview = useMemo(() => {
         try {
             const obj = JSON.parse(jsonText || '{}');
 
-            // Función mejorada para contar servicios
             const contarServicios = (nombreServicio) => {
                 let total = 0;
-
-                // 1. Buscar en nivel raíz
                 const arrRaiz = obj[nombreServicio];
-                if (Array.isArray(arrRaiz)) {
-                    total += arrRaiz.length;
-                }
+                if (Array.isArray(arrRaiz)) total += arrRaiz.length;
 
-                // 2. Buscar dentro de usuarios (Servicios anidados)
                 const usuarios = obj.usuarios || obj.Usuarios || obj.users || obj.afiliados || [];
                 if (Array.isArray(usuarios)) {
                     usuarios.forEach(usuario => {
                         const servicios = usuario.Servicios || usuario.servicios || {};
                         const arrServicio = servicios[nombreServicio];
-                        if (Array.isArray(arrServicio)) {
-                            total += arrServicio.length;
-                        }
+                        if (Array.isArray(arrServicio)) total += arrServicio.length;
                     });
                 }
-
                 return total;
             };
 
-            // Contar usuarios
             const usuariosArr = obj.usuarios || obj.Usuarios || obj.users || obj.afiliados || [];
             const totalUsuarios = Array.isArray(usuariosArr) ? usuariosArr.length : 0;
 
@@ -81,7 +72,7 @@ export default function UploadJson() {
                 consultas: contarServicios('consultas'),
                 procedimientos: contarServicios('procedimientos'),
                 hospitalizaciones: contarServicios('hospitalizaciones'),
-                recienNacidos: contarServicios('recienNacidos') + contarServicios('recienNacido'), // Ambos nombres
+                recienNacidos: contarServicios('recienNacidos') + contarServicios('recienNacido'),
                 urgencias: contarServicios('urgencias'),
                 medicamentos: contarServicios('medicamentos'),
                 otrosServicios: contarServicios('otrosServicios'),
@@ -90,40 +81,38 @@ export default function UploadJson() {
             return null;
         }
     }, [jsonText]);
+
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setMsg(null); setErr(null);
-        if (!prestadorId) {
-            setErr('Seleccione un prestador');
-            return;
-        }
+        setMsg(null);
+        setErr(null);
 
-        let parsed = null
+        if (!prestadorId) return setErr('Seleccione un prestador');
+
+        let parsed = null;
         if (!file) {
             try {
                 parsed = JSON.parse(jsonText);
             } catch {
-                setErr('El JSON no es valido')
-                return;
+                return setErr('El JSON no es válido');
             }
         }
 
-        setLoading(true)
+        setLoading(true);
 
         try {
             let res, data;
             if (file) {
                 const fd = new FormData();
-                fd.append('file', file)
+                fd.append('file', file);
                 fd.append('prestadorId', String(prestadorId));
                 if (periodoFac) fd.append('periodo_fac', String(periodoFac));
                 if (anio) fd.append('anio', String(anio));
 
                 res = await apiFetch('/api/auth/upload-json-file', {
                     method: 'POST',
-                    body: fd
+                    body: fd,
                 });
-
             } else {
                 res = await apiFetch('/api/auth/upload-json', {
                     method: 'POST',
@@ -135,38 +124,35 @@ export default function UploadJson() {
                     }),
                 });
             }
-            data = await res.json()
-            if (!res.ok) {
-                setErr(data?.message || 'Error en la carga');
-                return;
-            }
+
+            data = await res.json();
+            if (!res.ok) return setErr(data?.message || 'Error en la carga');
+
             setMsg(data?.message || 'Carga realizada correctamente');
-            if (data?.radicado) {
-                setMsg(prev => `${prev} - Radicado: ${data.radicado}`);
-            }
+            if (data?.radicado) setMsg(prev => `${prev} - Radicado: ${data.radicado}`);
         } finally {
-            setLoading(false)
+            setLoading(false);
         }
-    }
+    };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
-            <div className="mx-auto max-w-3xl rounded-2xl bg-white p-8 shadow-lg ring-1 ring-slate-200">
-                <h1 className="text-2xl font-bold text-slate-900">Subir JSON</h1>
-                <p className="mt-1 text-sm text-slate-500">
-                    Complete los campos y cargue el archivo JSON para registrar la información.
-                </p>
+        <div className="min-h-screen  p-6 flex items-center justify-center">
+            <div className="w-full max-w-3xl bg-white rounded-3xl shadow-xl border border-slate-200 p-10 transition">
+                <div className="text-center mb-8">
+                    <h1 className="text-3xl font-semibold text-slate-900 tracking-tight">Subir archivo JSON</h1>
+                    <p className="text-slate-500 mt-2 text-sm">Carga un archivo JSON para registrar la información.</p>
+                </div>
 
-                <form className="mt-6 space-y-6" onSubmit={handleSubmit}>
+                <form onSubmit={handleSubmit} className="space-y-6">
                     {/* Prestador */}
                     <div>
-                        <label className="block text-sm font-medium text-slate-700">Prestador</label>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Prestador</label>
                         <input
                             list="prestadores"
                             value={prestadorText}
                             onChange={(e) => setPrestadorText(e.target.value)}
                             placeholder="Escriba y seleccione ID - nombre"
-                            className="mt-2 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 shadow-sm focus:border-sky-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20"
+                            className="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-2.5 text-slate-800 placeholder-slate-400 focus:border-sky-500 focus:bg-white focus:ring-2 focus:ring-sky-500/20 outline-none transition"
                             required
                         />
                         <datalist id="prestadores">
@@ -180,72 +166,75 @@ export default function UploadJson() {
                         </datalist>
                     </div>
 
-                    {/* Fechas y periodo */}
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-
+                    {/* Periodo y Año */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-slate-700">Periodo (mes)</label>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Periodo (mes)</label>
                             <input
                                 type="number"
                                 min="1"
                                 max="12"
                                 value={periodoFac}
                                 onChange={(e) => setPeriodoFac(e.target.value)}
-                                className="mt-1 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 shadow-sm focus:border-sky-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20"
+                                className="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-2.5 text-slate-800 placeholder-slate-400 focus:border-sky-500 focus:bg-white focus:ring-2 focus:ring-sky-500/20 outline-none transition"
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-slate-700">Año</label>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Año</label>
                             <input
                                 type="number"
                                 min="1990"
                                 max="2100"
                                 value={anio}
                                 onChange={(e) => setAnio(e.target.value)}
-                                className="mt-1 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 shadow-sm focus:border-sky-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20"
+                                className="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-2.5 text-slate-800 placeholder-slate-400 focus:border-sky-500 focus:bg-white focus:ring-2 focus:ring-sky-500/20 outline-none transition"
                             />
                         </div>
                     </div>
 
                     {/* Archivo */}
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 ">Archivo JSON</label>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Archivo JSON</label>
                         <input
                             type="file"
                             accept="application/json,.json"
                             onChange={(e) => handleFile(e.target.files?.[0] || null)}
-                            className="mt-2 file:cursor-pointer block w-full text-sm text-slate-600 file:mr-4 file:rounded-md file:border-0 file:bg-sky-50 file:px-4 file:py-2 file:text-sm file:font-medium file:text-sky-700 hover:file:bg-sky-100 "
+                            className=" file:cursor-pointer block w-full text-sm text-slate-600 file:mr-4 file:rounded-lg file:border-0 file:bg-sky-600 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-sky-700 transition"
                         />
                     </div>
 
                     {/* Vista previa */}
                     {preview && (
-                        <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm">
-                            <h2 className="font-medium text-slate-800 mb-2">Vista previa</h2>
-                            <dl className="grid grid-cols-2 gap-x-6 gap-y-2">
-                                <div><dt className="text-slate-500">Nit:</dt><dd>{preview.nit ?? '-'}</dd></div>
-                                <div><dt className="text-slate-500">Factura:</dt><dd>{preview.factura ?? '-'}</dd></div>
-                                <div><dt className="text-slate-500">Usuarios:</dt><dd>{preview.usuarios}</dd></div>
-                                <div><dt className="text-slate-500">Consultas:</dt><dd>{preview.consultas}</dd></div>
-                                <div><dt className="text-slate-500">Procedimientos:</dt><dd>{preview.procedimientos}</dd></div>
-                                <div><dt className="text-slate-500">Hospitalizaciones:</dt><dd>{preview.hospitalizaciones}</dd></div>
-                                <div><dt className="text-slate-500">RN:</dt><dd>{preview.recienNacidos}</dd></div>
-                                <div><dt className="text-slate-500">Urgencias:</dt><dd>{preview.urgencias}</dd></div>
-                                <div><dt className="text-slate-500">Medicamentos:</dt><dd>{preview.medicamentos}</dd></div>
-                                <div><dt className="text-slate-500">Otros:</dt><dd>{preview.otrosServicios}</dd></div>
+                        <div className="rounded-2xl bg-slate-50 border border-slate-200 p-5">
+                            <h2 className="text-base font-semibold text-slate-800 mb-3">Vista previa</h2>
+                            <dl className="grid grid-cols-2 sm:grid-cols-3 gap-y-2 text-sm">
+                                {Object.entries(preview).map(([key, value]) => (
+                                    <div key={key}>
+                                        <dt className="capitalize text-slate-500">{key.replace(/([A-Z])/g, ' $1')}:</dt>
+                                        <dd className="font-medium text-slate-800">{value ?? '-'}</dd>
+                                    </div>
+                                ))}
                             </dl>
                         </div>
                     )}
 
                     {/* Mensajes */}
-                    {err && <div className="rounded-md bg-red-50 p-3 text-sm text-red-700 ring-1 ring-red-200">{err}</div>}
-                    {msg && <div className="rounded-md bg-emerald-50 p-3 text-sm text-emerald-700 ring-1 ring-emerald-200">{msg}</div>}
+                    {err && (
+                        <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700 ring-1 ring-red-200">
+                            {err}
+                        </div>
+                    )}
+                    {msg && (
+                        <div className="rounded-lg bg-emerald-50 p-3 text-sm text-emerald-700 ring-1 ring-emerald-200">
+                            {msg}
+                        </div>
+                    )}
 
                     {/* Botón */}
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full rounded-lg bg-sky-600 px-4 py-3 text-white font-medium shadow-md hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-1 disabled:opacity-60 cursor-pointer"
+                        className="cursor-pointer w-full py-3 rounded-xl bg-sky-600 text-white font-medium shadow hover:bg-sky-700 focus:ring-2 focus:ring-sky-400 focus:ring-offset-2 transition disabled:opacity-60"
                     >
                         {loading ? 'Cargando...' : 'Subir'}
                     </button>
