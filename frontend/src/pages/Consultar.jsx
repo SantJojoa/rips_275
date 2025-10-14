@@ -79,21 +79,21 @@ export default function Consultar() {
         const customStyles = {
             headRow: {
                 style: {
-                    backgroundColor: '#1E40AF', // blue-800
+                    backgroundColor: '#155dfc', // blue-800
                 }
             },
             headCells: {
                 style: {
                     color: '#FFFFFF',
-                    fontSize: '13px',
-                    fontWeight: '700',
+                    fontSize: '12px',
+                    fontWeight: '500',
                     paddingLeft: '16px',
                     paddingRight: '16px',
                 }
             },
             rows: {
                 style: {
-                    minHeight: '48px',
+                    minHeight: '40px',
                     '&:hover': {
                         backgroundColor: '#F1F5F9'
                     }
@@ -137,23 +137,23 @@ export default function Consultar() {
         return (
             <div>
                 <div className="mb-5 p-5 bg-slate-50 rounded-xl border border-slate-200 shadow-sm">
-                    <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center justify-between mb-2">
                         <h4 className="text-sm font-semibold text-slate-800">Columnas visibles</h4>
                         <div className="flex gap-2">
-                            <button onClick={selectAll} className="px-2 py-1 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">Seleccionar todo</button>
-                            <button onClick={clearAll} className="px-2 py-1 text-xs border border-red-200 text-red-600 rounded-md hover:bg-red-50 transition">Limpiar</button>
+                            <button onClick={selectAll} className="cursor-pointer px-2 py-1 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">Seleccionar todo</button>
+                            <button onClick={clearAll} className="cursor-pointer px-2 py-1 text-xs border border-red-200 text-red-600 rounded-md hover:bg-red-50 transition">Limpiar</button>
                         </div>
                     </div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
                         {possibleCols.map(col => (
-                            <label key={col.id} className="flex items-center gap-3 bg-white border border-slate-200 rounded-lg p-2 hover:bg-slate-100 transition">
+                            <label key={col.id} className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg p-2 hover:bg-slate-100 transition">
                                 <input
                                     type="checkbox"
                                     checked={visibleIds.includes(col.id)}
                                     onChange={() => toggleColumn(col.id)}
-                                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                    className="w-3 h-3 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                                 />
-                                <span className="text-sm text-slate-700">{col.label}</span>
+                                <span className="text-xs text-slate-700">{col.label}</span>
                             </label>
                         ))}
                     </div>
@@ -186,11 +186,9 @@ export default function Consultar() {
     ];
 
     return (
-        <div className="max-w-6xl mx-auto px-6 py-10">
-
-
+        <div className="max-w-6xl mx-auto px-3 py-5">
             {/* Buscador */}
-            <div className="bg-white border border-slate-200 rounded-2xl shadow-md p-8 mb-10">
+            <div className="bg-white border border-slate-200 rounded-2xl shadow-md p-5 mb-2">
                 {/* Header */}
                 <div className="text-center mb-10">
                     <h1 className="text-3xl font-semibold text-slate-900 tracking-tight">Consulta RIPS</h1>
@@ -211,7 +209,7 @@ export default function Consultar() {
                             onChange={(e) => setNumFactura(e.target.value)}
                             onKeyDown={handleKeyPress}
                             placeholder="Ej: 100245 o FAC-001"
-                            className="w-full px-4 py-3 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
                         />
                     </div>
 
@@ -219,7 +217,7 @@ export default function Consultar() {
                         <button
                             onClick={buscarFactura}
                             disabled={loading}
-                            className="cursor-pointer px-8 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow hover:bg-blue-700 disabled:opacity-50 transition transform hover:scale-105"
+                            className="cursor-pointer px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow hover:bg-blue-700 disabled:opacity-50 transition transform hover:scale-105"
                         >
                             <Search className="inline-block w-5 h-5 -mt-1" />
                         </button>
@@ -244,12 +242,12 @@ export default function Consultar() {
 
             {/* Selector de Usuario */}
             {data?.users && data.users.length > 0 && (
-                <div className="bg-white rounded-2xl shadow-md border border-slate-200 p-6 mb-6">
-                    <h3 className="text-lg font-semibold text-slate-800 mb-4">Seleccionar usuario</h3>
+                <div className="bg-white rounded-2xl shadow-md border border-slate-200 p-4 mb-6">
+                    <h3 className="text-1xl font-semibold text-slate-800 mb-4">Seleccionar usuario</h3>
                     <select
                         value={selectedUserId || ""}
                         onChange={(e) => buscarFactura(e.target.value)}
-                        className="w-full px-4 py-3 border border-slate-300 bg-white rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                        className="w-full px-3 text-sm py-2 border border-slate-300 bg-white rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
                     >
                         <option value="" disabled>Seleccione un usuario</option>
                         {data.users.map(user => (
@@ -264,11 +262,11 @@ export default function Consultar() {
             {/* Datos */}
             {data && !data.pendingUserSelection && (
                 <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-slate-200">
-                    <div className="bg-blue-600 p-6 ">
-                        <h3 className="text-2xl font-bold text-white">Información de la Factura</h3>
+                    <div className="bg-blue-600 p-4 ">
+                        <h3 className="text-xl font-semibold text-white">Información de la Factura</h3>
                     </div>
 
-                    <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 bg-slate-50">
+                    <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 bg-slate-50 ">
                         {[
                             { label: 'Número de Factura', value: data.transaccion?.num_factura },
                             { label: 'NIT', value: data.transaccion?.num_nit },
@@ -292,9 +290,9 @@ export default function Consultar() {
                             { label: 'Periodo', value: `${data.control?.periodo_fac}/${data.control?.año}` },
                             { label: 'Estado', value: data.control?.status }
                         ].map((item, i) => (
-                            <div key={i} className="bg-white border border-slate-200 rounded-lg p-4 shadow-sm hover:shadow-md transition">
+                            <div key={i} className="bg-white border border-slate-200 rounded-lg p-3 shadow-sm  ">
                                 <p className="text-xs uppercase font-medium text-slate-500">{item.label}</p>
-                                <p className="mt-1 text-lg font-semibold text-slate-800">{item.value}</p>
+                                <p className="mt-1 text-sm font-semibold text-slate-800">{item.value}</p>
                             </div>
                         ))}
                     </div>
@@ -306,7 +304,7 @@ export default function Consultar() {
                                 <button
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id)}
-                                    className={`py-4 text-sm font-medium border-b-2 transition-all ${activeTab === tab.id
+                                    className={`cursor-pointer py-3 text-sm font-medium border-b-2 transition-all ${activeTab === tab.id
                                         ? 'border-blue-600 text-blue-600'
                                         : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
                                         }`}
