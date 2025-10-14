@@ -23,7 +23,9 @@ export default function Consultar() {
         setError(null);
 
         try {
-            const url = `/api/auth/search/factura?num_factura=${numFactura}${userId ? `&user_id=${userId}` : ''}`;
+            // Ensure userId is a string and not an object
+            const userIdParam = userId && typeof userId === 'object' ? '' : `&user_id=${encodeURIComponent(String(userId || ''))}`;
+            const url = `/api/auth/search/factura?num_factura=${encodeURIComponent(numFactura)}${userIdParam}`;
             const response = await apiFetch(url);
             const result = await response.json();
 
