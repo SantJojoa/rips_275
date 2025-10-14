@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { apiFetch } from '../lib/api';
+import { monthOptions, yearsOptions } from '../data/facturedDateOptions';
+import Select from 'react-select'
 
 export default function UploadJson() {
     const [prestadores, setPrestadores] = useState([]);
@@ -12,6 +14,16 @@ export default function UploadJson() {
     const [loading, setLoading] = useState(false);
     const [msg, setMsg] = useState(null);
     const [err, setErr] = useState(null);
+
+
+    const prestadorOptions = prestadores.map(p => ({
+        value: String(p.id),
+        label: `${p.id} - ${p.nombre}${p.nit ? ' • NIT: ' + p.nit : ''}${p.cod ? ' (' + p.cod + ')' : ''}`,
+    }))
+
+
+    const selectedPrestador = prestadorOptions.find(o => o.value === String(prestadorId)) || null
+
 
     useEffect(() => {
         (async () => {
@@ -144,55 +156,101 @@ export default function UploadJson() {
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
-                    {/* Prestador */}
                     <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">Prestador</label>
-                        <input
-                            list="prestadores"
-                            value={prestadorText}
-                            onChange={(e) => setPrestadorText(e.target.value)}
-                            placeholder="Escriba y seleccione ID - nombre"
-                            className="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-2.5 text-slate-800 placeholder-slate-400 focus:border-sky-500 focus:bg-white focus:ring-2 focus:ring-sky-500/20 outline-none transition"
-                            required
+
+                        <Select
+                            options={prestadorOptions}
+                            value={selectedPrestador}
+                            onChange={(opt) => {
+                                if (!opt) {
+                                    setPrestadorId('')
+                                    setPrestadorText('')
+                                    return
+                                }
+                                setPrestadorId(opt.value)
+                                setPrestadorText(opt.label)
+                            }}
+                            isClearable
+                            placeholder="Buscar y seleccionar prestador..."
+                            classNamePrefix="react-select"
+                            styles={{
+                                container: (base) => ({ ...base, width: '100%' }),
+                                control: (base) => ({
+                                    ...base,
+                                    borderRadius: 12,
+                                    borderColor: '#CBD5E1',
+                                    boxShadow: 'none',
+                                    padding: '2px 4px'
+                                }),
+                                input: (base) => ({ ...base, color: 'inherit' }),
+                                menu: (base) => ({ ...base, borderRadius: 12 }),
+                            }}
                         />
-                        <datalist id="prestadores">
-                            {prestadores.map(p => (
-                                <option
-                                    key={p.id}
-                                    value={`${p.id} - ${p.nombre}`}
-                                    label={`${p.nit ?? ''} ${p.cod ? '(' + p.cod + ')' : ''}`}
-                                />
-                            ))}
-                        </datalist>
                     </div>
 
-                    {/* Periodo y Año */}
+                    <p className="text-sm font-medium text-slate-700 mb-3">Periodo de facturación:</p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Periodo (mes)</label>
-                            <input
-                                type="number"
-                                min="1"
-                                max="12"
-                                value={periodoFac}
-                                onChange={(e) => setPeriodoFac(e.target.value)}
-                                className="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-2.5 text-slate-800 placeholder-slate-400 focus:border-sky-500 focus:bg-white focus:ring-2 focus:ring-sky-500/20 outline-none transition"
-                            />
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Mes</label>
+                            <Select
+                                options={monthOptions}
+                                value={monthOptions.find((opt) => opt.value === Number(periodoFac))}
+                                onChange={(selected) => setPeriodoFac(selected ? selected.value : '')}
+                                placeholder={'Seleccionar mes'}
+                                isClearable
+                                className="react-select-container"
+                                classNamePrefix="react-select"
+                                styles={{
+                                    container: (base) => ({ ...base, width: '100%' }),
+                                    control: (base) => ({
+                                        ...base,
+                                        borderRadius: 12,
+                                        borderColor: '#CBD5E1',
+                                        boxShadow: 'none',
+                                        padding: '2px 4px'
+                                    }),
+                                    input: (base) => ({ ...base, color: 'inherit' }),
+                                    menu: (base) => ({ ...base, borderRadius: 12 }),
+                                }}
+
+
+
+
+                            >
+
+
+                            </Select>
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-slate-700 mb-1">Año</label>
-                            <input
-                                type="number"
-                                min="1990"
-                                max="2100"
-                                value={anio}
-                                onChange={(e) => setAnio(e.target.value)}
-                                className="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-2.5 text-slate-800 placeholder-slate-400 focus:border-sky-500 focus:bg-white focus:ring-2 focus:ring-sky-500/20 outline-none transition"
-                            />
+
+                            <Select
+                                options={yearsOptions}
+                                value={yearsOptions.find((opt) => opt.value === Number(anio))}
+                                onChange={(selected) => setAnio(selected ? selected.value : '')}
+                                placeholder={'Seleccionar año'}
+                                isClearable
+                                className="react-select-container"
+                                classNamePrefix="react-select"
+                                styles={{
+                                    container: (base) => ({ ...base, width: '100%' }),
+                                    control: (base) => ({
+                                        ...base,
+                                        borderRadius: 12,
+                                        borderColor: '#CBD5E1',
+                                        boxShadow: 'none',
+                                        padding: '2px 4px'
+                                    }),
+                                    input: (base) => ({ ...base, color: 'inherit' }),
+                                    menu: (base) => ({ ...base, borderRadius: 12 }),
+                                }}
+                            >
+
+                            </Select>
                         </div>
                     </div>
 
-                    {/* Archivo */}
                     <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">Archivo JSON</label>
                         <input
@@ -203,7 +261,6 @@ export default function UploadJson() {
                         />
                     </div>
 
-                    {/* Vista previa */}
                     {preview && (
                         <div className="rounded-2xl bg-slate-50 border border-slate-200 p-5">
                             <h2 className="text-base font-semibold text-slate-800 mb-3">Vista previa</h2>
@@ -218,7 +275,6 @@ export default function UploadJson() {
                         </div>
                     )}
 
-                    {/* Mensajes */}
                     {err && (
                         <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700 ring-1 ring-red-200">
                             {err}
@@ -230,7 +286,6 @@ export default function UploadJson() {
                         </div>
                     )}
 
-                    {/* Botón */}
                     <button
                         type="submit"
                         disabled={loading}

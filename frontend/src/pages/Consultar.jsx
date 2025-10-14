@@ -170,6 +170,7 @@ export default function Consultar() {
                         persistTableHead
                         customStyles={customStyles}
                         noDataComponent={<div className="p-6 text-center text-slate-500">No hay datos disponibles</div>}
+
                     />
                 </div>
             </div>
@@ -201,7 +202,8 @@ export default function Consultar() {
                             htmlFor="numFactura"
                             className="block text-sm font-medium text-slate-600 mb-2"
                         >
-                            Búsqueda por numero de factura                        </label>
+                            Búsqueda por numero de factura
+                        </label>
                         <input
                             type="text"
                             id="numFactura"
