@@ -4,6 +4,11 @@ import { apiFetch } from "../lib/api";
 import * as XLSX from 'xlsx';
 import { Search } from 'lucide-react';
 import { saveAs } from 'file-saver';
+import { ToastContainer, toast } from 'react-toastify';
+import Select from 'react-select'
+import { SearchBill } from '../services/searchBill';
+import { exportFacturaToExcel } from '../utils/exportToExcel';
+
 
 
 export default function Consultar() {
@@ -17,35 +22,21 @@ export default function Consultar() {
     const [isFactura, setIsFactura] = useState(false);
 
     const buscarFactura = async (userId = null) => {
-        if (!numFactura.trim()) {
-            setError('Por favor ingrese un número de factura');
-            return;
-        }
-
-        setLoading(true);
-        setError(null);
-
         try {
-            // Ensure userId is a string and not an object
-            const userIdParam = userId && typeof userId === 'object' ? '' : `&user_id=${encodeURIComponent(String(userId || ''))}`;
-            const url = `/api/auth/search/factura?num_factura=${encodeURIComponent(numFactura)}${userIdParam}`;
-            const response = await apiFetch(url);
-            const result = await response.json();
+            setLoading(true);
+            setError(null);
 
-            if (!response.ok) throw new Error(result.message || 'Error al buscar factura');
-
-            console.log('Datos recibidos:', result);
+            const result = await SearchBill(numFactura, userId);
 
             if (!userId) {
                 setData(result);
             } else {
                 setData(prevData => {
                     if (!prevData) return result;
-                    const newData = {
+                    return {
                         ...result,
                         users: prevData.users || result.users || []
                     };
-                    return newData;
                 });
             }
 
@@ -57,6 +48,7 @@ export default function Consultar() {
             setLoading(false);
         }
     };
+
 
     const handleKeyPress = (e) => e.key === 'Enter' && buscarFactura();
 
@@ -192,149 +184,7 @@ export default function Consultar() {
 
 
     const exportToExcel = async () => {
-        if (!data) {
-            alert('No hay datos para exportar');
-            return;
-        }
-
-        try {
-            const workbook = XLSX.utils.book_new();
-
-            // helper: turn array of objects (merging item.data) into sheet
-            const createSheetFromArray = (name, arr) => {
-                if (!arr || arr.length === 0) return false;
-                const rows = arr.map(item => {
-                    const plain = { ...item, ...(item.data || {}) };
-                    delete plain.data;
-                    return plain;
-                });
-                const ws = XLSX.utils.json_to_sheet(rows);
-                // Excel limita a 31 chars por hoja
-                XLSX.utils.book_append_sheet(workbook, ws, name.slice(0, 31));
-                return true;
-            };
-
-            // Info general de factura
-            const info = [{
-                Numero_factura: data.transaccion?.num_factura || '',
-                NIT: data.transaccion?.num_nit || '',
-                Prestador: data.control?.Prestador?.nombre_prestador || '',
-                Periodo: `${data.control?.periodo_fac || ''}/${data.control?.año || ''}`,
-                Estado: data.control?.status || '',
-                Total_Usuarios: data.users?.length ?? 1
-            }];
-            XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(info), 'Factura');
-
-            // Si no hay users[], tratamos como factura "normal" (una sola serie de arrays globales)
-            if (!data.users || data.users.length === 0) {
-                createSheetFromArray('Consultas', data.consultas);
-                createSheetFromArray('Procedimientos', data.procedimientos);
-                createSheetFromArray('Medicamentos', data.medicamentos);
-                createSheetFromArray('Hospitalizaciones', data.hospitalizaciones);
-                createSheetFromArray('Urgencias', data.urgencias);
-                createSheetFromArray('OtrosServicios', data.otrosServicios);
-            } else {
-                // Si hay usuarios, intentaremos obtener datos por cada usuario.
-                // Si data ya contiene servicios globales que incluyen todos los usuarios, podemos
-                // optar por filtrar localmente; pero para robustez, haremos fetch individual
-                // solo si los arrays globales están vacíos o no contienen datos para los usuarios.
-
-                // Determinar si los arrays globales ya contienen información (no vacíos).
-                const globalHasData = (arr) => Array.isArray(arr) && arr.length > 0;
-                const anyGlobalData = ['consultas', 'procedimientos', 'medicamentos', 'hospitalizaciones', 'urgencias', 'otrosServicios']
-                    .some(k => globalHasData(data[k]));
-
-                // Si hay datos globales y esos arrays ya contienen elementos, intentaremos
-                // validar si los datos están por usuario (filtrando localmente). Pero por seguridad
-                // preferimos hacer fetchs por usuario cuando la respuesta inicial no contiene servicios.
-                let perUserResults = [];
-
-                if (!anyGlobalData) {
-                    // No hay servicios globales: traer por cada usuario
-                    const promises = data.users.map(async (user) => {
-                        const numFactura = encodeURIComponent(String(data.transaccion?.num_factura || ''));
-                        const url = `/api/auth/search/factura?num_factura=${numFactura}&user_id=${encodeURIComponent(String(user.id))}`;
-                        const resp = await apiFetch(url);
-                        const json = await resp.json();
-                        if (!resp.ok) {
-                            // Si falla para un usuario, devolvemos un objeto vacío con solo user info
-                            return { user, result: null, error: json?.message || `Error usuario ${user.id}` };
-                        }
-                        return { user, result: json, error: null };
-                    });
-
-                    perUserResults = await Promise.all(promises);
-                } else {
-                    // Hay datos globales — los agrupamos por user localmente:
-                    perUserResults = data.users.map(user => {
-                        const filterByUser = (arr) => (arr || []).filter(item => {
-                            const uid = item.user_id ?? item.id_user ?? item.usuario_id ?? item.userId ?? item.usuario?.id;
-                            // uid y user.id pueden llegar como string / number -> normalizamos
-                            return String(uid) === String(user.id);
-                        });
-
-                        const result = {
-                            consultas: filterByUser(data.consultas),
-                            procedimientos: filterByUser(data.procedimientos),
-                            medicamentos: filterByUser(data.medicamentos),
-                            hospitalizaciones: filterByUser(data.hospitalizaciones),
-                            urgencias: filterByUser(data.urgencias),
-                            otrosServicios: filterByUser(data.otrosServicios),
-                        };
-                        return { user, result, error: null };
-                    });
-                }
-
-                // Ahora creamos hojas para cada usuario con lo obtenido
-                for (const entry of perUserResults) {
-                    const user = entry.user;
-                    const res = entry.result;
-
-                    const sheetBase = `${user.tipo_doc || ''}-${user.num_doc || user.id || 'user'}`.replace(/[\\/?*[\]]/g, '_').slice(0, 20);
-
-                    // Si el fetch falló o no devolvió servicios, aún así creamos la hoja Info del usuario
-                    if (!res) {
-                        const infoUser = [{
-                            Tipo_Doc: user.tipo_doc || '',
-                            Numero_Doc: user.num_doc || user.id || '',
-                            Tipo_Usuario: user.tipo_usuario || '',
-                            Nota: entry.error || 'Sin datos de servicios para este usuario'
-                        }];
-                        XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(infoUser), `${sheetBase}_Info`.slice(0, 31));
-                        continue;
-                    }
-
-                    // Si la estructura devuelta por el endpoint es la misma que `data` (con keys como consultas, procedimientos, etc.)
-                    // usamos esas claves; si la respuesta trae las listas en otra forma, puedes adaptar aquí.
-                    createSheetFromArray(`${sheetBase}_Consultas`, res.consultas);
-                    createSheetFromArray(`${sheetBase}_Procedimientos`, res.procedimientos);
-                    createSheetFromArray(`${sheetBase}_Medicamentos`, res.medicamentos);
-                    createSheetFromArray(`${sheetBase}_Hospitalizaciones`, res.hospitalizaciones);
-                    createSheetFromArray(`${sheetBase}_Urgencias`, res.urgencias);
-                    createSheetFromArray(`${sheetBase}_OtrosServicios`, res.otrosServicios);
-
-                    // Info del usuario
-                    const infoUser = [{
-                        Tipo_Doc: user.tipo_doc || '',
-                        Numero_Doc: user.num_doc || user.id || '',
-                        Tipo_Usuario: user.tipo_usuario || '',
-                        Factura: data.transaccion?.num_factura || '',
-                        NIT: data.transaccion?.num_nit || '',
-                    }];
-                    XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(infoUser), `${sheetBase}_Info`.slice(0, 31));
-                }
-            }
-
-            // Guardar workbook
-            const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-            const blob = new Blob([excelBuffer], { type: 'application/octet-stream' });
-            const fileName = `Factura_${data.transaccion?.num_factura || 'Sin_numero'}.xlsx`;
-            saveAs(blob, fileName);
-
-        } catch (err) {
-            console.error('Error exportando a excel:', err);
-            alert('Ocurrió un error exportando el Excel. Revisa la consola.');
-        }
+        exportFacturaToExcel(data);
     };
 
 
@@ -410,18 +260,28 @@ export default function Consultar() {
             {data?.users && data.users.length > 0 && (
                 <div className="bg-white rounded-2xl shadow-md border border-slate-200 p-4 mb-6">
                     <h3 className="text-1xl font-semibold text-slate-800 mb-4">Seleccionar usuario</h3>
-                    <select
-                        value={selectedUserId || ""}
-                        onChange={(e) => buscarFactura(e.target.value)}
-                        className="w-full px-3 text-sm py-2 border border-slate-300 bg-white rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-                    >
-                        <option value="" disabled>Seleccione un usuario</option>
-                        {data.users.map(user => (
-                            <option key={user.id} value={user.id}>
-                                {user.tipo_doc} {user.num_doc} - {user.tipo_usuario}
-                            </option>
-                        ))}
-                    </select>
+                    <Select
+                        options={data.users.map(user => ({
+                            value: user.id,
+                            label: `${user.tipo_doc} ${user.num_doc}`,
+                        }))}
+                        value={selectedUserId}
+                        onChange={(e) => buscarFactura(e.value)}
+                        placeholder="Seleccione un usuario"
+                        classNamePrefix="react-select"
+                        styles={{
+                            container: (base) => ({ ...base, width: '100%' }),
+                            control: (base) => ({
+                                ...base,
+                                borderRadius: 12,
+                                borderColor: '#CBD5E1',
+                                boxShadow: 'none',
+                                padding: '2px 4px'
+                            }),
+                            input: (base) => ({ ...base, color: 'inherit' }),
+                            menu: (base) => ({ ...base, borderRadius: 12 }),
+                        }}
+                    />
                 </div>
             )}
 
