@@ -1,7 +1,9 @@
 import { useState } from "react";
 import DataTable from 'react-data-table-component';
 import { apiFetch } from "../lib/api";
+import * as XLSX from 'xlsx';
 import { Search } from 'lucide-react';
+import { saveAs } from 'file-saver';
 
 
 export default function Consultar() {
@@ -186,6 +188,57 @@ export default function Consultar() {
         { id: 'otrosServicios', label: 'Otros Servicios', data: data?.otrosServicios },
     ];
 
+    const exportToExcel = () => {
+        if (!data) {
+            alert('No hay datos para exportar');
+            return;
+        }
+
+        const workbook = XLSX.utils.book_new();
+
+        const createSheet = (name, data) => {
+            if (!data || data.length === 0) return;
+
+            const rows = data.map(item => {
+                const plain = { ...item, ...(item.data || {}) };
+                delete plain.data;
+                return plain;
+            });
+
+            const worksheet = XLSX.utils.json_to_sheet(rows);
+            XLSX.utils.book_append_sheet(workbook, worksheet, name);
+        };
+
+        createSheet('Consultas', data?.consultas);
+        createSheet('Procedimientos', data?.procedimientos);
+        createSheet('Medicamentos', data?.medicamentos);
+        createSheet('Hospitalizaciones', data?.hospitalizaciones);
+        createSheet('Urgencias', data?.urgencias);
+        createSheet('Otros Servicios', data?.otrosServicios);
+
+        if (data.transaccion || data.control || data.usuario) {
+            const info = [{
+                Numero_factura: data.transaccion?.num_factura || '',
+                NIT: data.transaccion?.num_nit || '',
+                Prestador: data.control?.Prestador?.nombre_prestador || '',
+                Usuario: data.usuario
+                    ? `${data.usuario?.tipo_doc || ''} ${data.usuario?.num_doc || ''} - ${data.usuario.tipo_usuario || ''}`
+                    : 'No especificado',
+                Periodo: `${data.control?.periodo_fac}/${data.control?.año}`,
+                Estado: data.control?.status
+            }];
+            const wsInfo = XLSX.utils.json_to_sheet(info);
+            XLSX.utils.book_append_sheet(workbook, wsInfo, 'Factura');
+        }
+        const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+        const blob = new Blob([excelBuffer], { type: 'application/octet-stream' });
+
+        const fileName = `Factura_${data.transaccion?.num_factura || 'Sin numero'}.xlsx`;
+        saveAs(blob, fileName);
+    }
+
+
+
     return (
         <div className="max-w-6xl mx-auto px-3 py-5">
             {/* Buscador */}
@@ -278,18 +331,20 @@ export default function Consultar() {
                                 value: (() => {
                                     if (!data) return 'No especificado';
                                     if (data.usuario) {
-                                        return `${data.usuario.tipo_doc || ''} ${data.usuario.num_doc || ''} - ${data.usuario.tipo_usuario || ''}`.trim();
+                                        return `${data.usuario.tipo_doc || ''} ${data.usuario.num_doc || ''} - ${data.usuario.tipo_usuario || ''} `.trim();
                                     }
                                     if (data.users && selectedUserId) {
                                         const selectedUser = data.users.find(u => u.id === Number(selectedUserId));
                                         if (selectedUser) {
-                                            return `${selectedUser.tipo_doc || ''} ${selectedUser.num_doc || ''} - ${selectedUser.tipo_usuario || ''}`.trim();
+                                            return `${selectedUser.tipo_doc || ''} ${selectedUser.num_doc || ''} - ${selectedUser.tipo_usuario || ''} `.trim();
                                         }
                                     }
                                     return 'No especificado';
                                 })()
                             },
-                            { label: 'Periodo', value: `${data.control?.periodo_fac}/${data.control?.año}` },
+                            {
+                                label: 'Periodo', value: `${data.control?.periodo_fac}/${data.control?.año}`
+                            },
                             { label: 'Estado', value: data.control?.status }
                         ].map((item, i) => (
                             <div key={i} className="bg-white border border-slate-200 rounded-lg p-3 shadow-sm  ">
@@ -297,10 +352,19 @@ export default function Consultar() {
                                 <p className="mt-1 text-sm font-semibold text-slate-800">{item.value}</p>
                             </div>
                         ))}
+                    </div >
+                    <div className="flex justify-end p-4 bg-slate-50 border-t border-slate-200">
+                        <button
+                            onClick={exportToExcel}
+                            className="cursor-pointer px-4 py-2 bg-green-600 text-white text-sm font-semibold rounded-lg shadow hover:bg-green-700 transition"
+                        >
+                            Exportar a Excel
+                        </button>
                     </div>
 
+
                     {/* Tabs */}
-                    <div className="border-t border-slate-200 bg-white">
+                    < div className="border-t border-slate-200 bg-white" >
                         <nav className="flex overflow-x-auto gap-6 px-6 bg-slate-50">
                             {tabs.map((tab) => (
                                 <button
@@ -328,9 +392,9 @@ export default function Consultar() {
                                 </div>
                             ))}
                         </div>
-                    </div>
-                </div>
+                    </div >
+                </div >
             )}
-        </div>
+        </div >
     );
 }
