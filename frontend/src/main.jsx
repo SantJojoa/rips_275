@@ -10,6 +10,8 @@ import Consultar from './pages/Consultar.jsx'
 import Layout from './components/Layout.jsx'
 import { AdminRoute } from './components/RouteGuards.jsx'
 import NotFound from './pages/NotFound.jsx'
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 function PrivateRoute({ children }) {
   return getToken() ? <Layout>{children}</Layout> : <Navigate to="/login" />
@@ -17,6 +19,7 @@ function PrivateRoute({ children }) {
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
+    <ToastContainer />
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Login />} />
