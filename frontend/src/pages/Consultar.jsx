@@ -1,15 +1,10 @@
 import { useState } from "react";
-import DataTable from 'react-data-table-component';
-import { apiFetch } from "../lib/api";
-import * as XLSX from 'xlsx';
 import { Search } from 'lucide-react';
-import { saveAs } from 'file-saver';
 import { ToastContainer, toast } from 'react-toastify';
 import Select from 'react-select'
 import { SearchBill } from '../services/searchBill';
 import { exportFacturaToExcel } from '../utils/exportToExcel';
-
-
+import RenderTabla from '../components/RenderTabla';
 
 export default function Consultar() {
     const [numFactura, setNumFactura] = useState('');
@@ -20,6 +15,17 @@ export default function Consultar() {
     const [selectedUserId, setSelectedUserId] = useState(null);
     const [visibleColsByTab, setVisibleColsByTab] = useState({});
     const [isFactura, setIsFactura] = useState(false);
+
+    const handleKeyPress = (e) => e.key === 'Enter' && buscarFactura();
+
+    const tabs = [
+        { id: 'consultas', label: 'Consultas', data: data?.consultas },
+        { id: 'procedimientos', label: 'Procedimientos', data: data?.procedimientos },
+        { id: 'medicamentos', label: 'Medicamentos', data: data?.medicamentos },
+        { id: 'hospitalizaciones', label: 'Hospitalizaciones', data: data?.hospitalizaciones },
+        { id: 'urgencias', label: 'Urgencias', data: data?.urgencias },
+        { id: 'otrosServicios', label: 'Otros Servicios', data: data?.otrosServicios },
+    ];
 
     const buscarFactura = async (userId = null) => {
         try {
@@ -39,7 +45,6 @@ export default function Consultar() {
                     };
                 });
             }
-
             setSelectedUserId(userId);
             setIsFactura(true);
         } catch (err) {
@@ -49,150 +54,14 @@ export default function Consultar() {
         }
     };
 
-
-    const handleKeyPress = (e) => e.key === 'Enter' && buscarFactura();
-
-    const renderTabla = (datos, tabId, titulo) => {
-        if (!datos || datos.length === 0) {
-            return (
-                <div className="text-center py-8 text-slate-500 italic bg-white rounded-lg shadow-inner border border-slate-200">
-                    No hay datos disponibles para {titulo}
-                </div>
-            );
-        }
-
-        const primerItem = datos[0] || {};
-        const forbidden = [/^id$/i, /^id_user$/i, /^user_id$/i, /^createdAt$/i, /^updatedAt$/i, /^created_at$/i, /^updated_at$/i];
-        const baseKeys = Object.keys(primerItem).filter(k => k !== 'data' && !forbidden.some(rx => rx.test(k)));
-        const dataKeys = primerItem.data ? Object.keys(primerItem.data).filter(k => !forbidden.some(rx => rx.test(k))) : [];
-        const humanize = (s) => String(s).replace(/^data\./, '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-
-        const possibleCols = [
-            ...baseKeys.map(k => ({ id: k, label: humanize(k), type: 'base', key: k })),
-            ...dataKeys.map(k => ({ id: `data.${k}`, label: humanize(k), type: 'data', key: k }))
-        ];
-
-        const customStyles = {
-            headRow: {
-                style: {
-                    backgroundColor: '#155dfc', // blue-800
-                }
-            },
-            headCells: {
-                style: {
-                    color: '#FFFFFF',
-                    fontSize: '12px',
-                    fontWeight: '500',
-                    paddingLeft: '16px',
-                    paddingRight: '16px',
-                }
-            },
-            rows: {
-                style: {
-                    minHeight: '40px',
-                    '&:hover': {
-                        backgroundColor: '#F1F5F9'
-                    }
-                }
-            },
-            pagination: {
-                style: {
-                    borderTop: '1px solid #E2E8F0',
-                }
-            }
-        };
-
-        const visibleIds = visibleColsByTab[tabId] ?? possibleCols.map(c => c.id);
-
-        const toggleColumn = (colId) => {
-            setVisibleColsByTab(prev => {
-                const prevSet = new Set(prev[tabId] ?? possibleCols.map(c => c.id));
-                if (prevSet.has(colId)) prevSet.delete(colId); else prevSet.add(colId);
-                return { ...prev, [tabId]: Array.from(prevSet) };
-            });
-        };
-
-        const selectAll = () => setVisibleColsByTab(prev => ({ ...prev, [tabId]: possibleCols.map(c => c.id) }));
-        const clearAll = () => setVisibleColsByTab(prev => ({ ...prev, [tabId]: [] }));
-
-        const columns = possibleCols
-            .filter(c => visibleIds.includes(c.id))
-            .map(c => ({
-                name: c.label,
-                selector: row => c.type === 'base' ? row[c.key] : row.data?.[c.key],
-                sortable: true,
-                cell: row => {
-                    let valor = c.type === 'base' ? row[c.key] : row.data?.[c.key];
-                    if (valor && typeof valor === 'string' && /^\d{4}-\d{2}-\d{2}/.test(valor)) {
-                        try { valor = new Date(valor).toLocaleString('es-ES'); } catch { }
-                    }
-                    return <div className="text-sm text-slate-800">{valor ?? ''}</div>;
-                }
-            }));
-
-        return (
-            <div>
-                <div className="mb-5 p-5 bg-slate-50 rounded-xl border border-slate-200 shadow-sm">
-                    <div className="flex items-center justify-between mb-2">
-                        <h4 className="text-sm font-semibold text-slate-800">Columnas visibles</h4>
-                        <div className="flex gap-2">
-                            <button onClick={selectAll} className="cursor-pointer px-2 py-1 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">Seleccionar todo</button>
-                            <button onClick={clearAll} className="cursor-pointer px-2 py-1 text-xs border border-red-200 text-red-600 rounded-md hover:bg-red-50 transition">Limpiar</button>
-                        </div>
-                    </div>
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-                        {possibleCols.map(col => (
-                            <label key={col.id} className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg p-2 hover:bg-slate-100 transition">
-                                <input
-                                    type="checkbox"
-                                    checked={visibleIds.includes(col.id)}
-                                    onChange={() => toggleColumn(col.id)}
-                                    className="w-3 h-3 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                                />
-                                <span className="text-xs text-slate-700">{col.label}</span>
-                            </label>
-                        ))}
-                    </div>
-                </div>
-
-                <div className="rounded-xl border border-slate-200 shadow-md bg-white overflow-hidden">
-                    <DataTable
-                        columns={columns}
-                        data={datos}
-                        pagination
-                        highlightOnHover
-                        dense
-                        noHeader
-                        persistTableHead
-                        customStyles={customStyles}
-                        noDataComponent={<div className="p-6 text-center text-slate-500">No hay datos disponibles</div>}
-
-                    />
-                </div>
-            </div>
-        );
-    };
-
-    const tabs = [
-        { id: 'consultas', label: 'Consultas', data: data?.consultas },
-        { id: 'procedimientos', label: 'Procedimientos', data: data?.procedimientos },
-        { id: 'medicamentos', label: 'Medicamentos', data: data?.medicamentos },
-        { id: 'hospitalizaciones', label: 'Hospitalizaciones', data: data?.hospitalizaciones },
-        { id: 'urgencias', label: 'Urgencias', data: data?.urgencias },
-        { id: 'otrosServicios', label: 'Otros Servicios', data: data?.otrosServicios },
-    ];
-
-
     const exportToExcel = async () => {
         exportFacturaToExcel(data);
     };
 
-
     return (
         <div className="max-w-6xl mx-auto px-3 py-5">
-            {/* Buscador */}
+
             <div className="bg-white border border-slate-200 rounded-2xl shadow-md p-5 mb-2">
-                {/* Header */}
                 <div className="text-center mb-10">
                     <h1 className="text-3xl font-semibold text-slate-900 tracking-tight">Consulta RIPS</h1>
                     <p className="text-slate-500 mt-2 text-sm">Busque información de facturas en el sistema.</p>
@@ -229,7 +98,6 @@ export default function Consultar() {
                 </div>
             </div>
 
-            {/* Loading */}
             {loading && (
                 <div className="text-center py-12">
                     <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -237,7 +105,6 @@ export default function Consultar() {
                 </div>
             )}
 
-            {/* Error */}
             {error && (
                 <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg shadow mb-6 text-sm">
                     {error}
@@ -255,8 +122,6 @@ export default function Consultar() {
                 </div>
             )}
 
-
-            {/* Selector de Usuario */}
             {data?.users && data.users.length > 0 && (
                 <div className="bg-white rounded-2xl shadow-md border border-slate-200 p-4 mb-6">
                     <h3 className="text-1xl font-semibold text-slate-800 mb-4">Seleccionar usuario</h3>
@@ -285,7 +150,6 @@ export default function Consultar() {
                 </div>
             )}
 
-            {/* Datos */}
             {data && !data.pendingUserSelection && (
                 <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-slate-200">
                     <div className="bg-blue-600 p-4 ">
@@ -326,7 +190,6 @@ export default function Consultar() {
                     </div >
 
 
-                    {/* Tabs */}
                     < div className="border-t border-slate-200 bg-white" >
                         <nav className="flex overflow-x-auto gap-6 px-6 bg-slate-50">
                             {tabs.map((tab) => (
@@ -351,7 +214,13 @@ export default function Consultar() {
                         <div className="p-6">
                             {tabs.map((tab) => (
                                 <div key={tab.id} className={activeTab === tab.id ? 'block' : 'hidden'}>
-                                    {renderTabla(tab.data, tab.id, tab.label)}
+                                    <RenderTabla
+                                        datos={tab.data}
+                                        tabId={tab.id}
+                                        titulo={tab.label}
+                                        visibleColsByTab={visibleColsByTab}
+                                        setVisibleColsByTab={setVisibleColsByTab}
+                                    />
                                 </div>
                             ))}
                         </div>
