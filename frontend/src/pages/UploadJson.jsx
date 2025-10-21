@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { apiFetch } from '../lib/api';
 import { monthOptions, yearsOptions } from '../data/facturedDateOptions';
 import Select from 'react-select'
+import { showError, showSuccess } from '../utils/toastUtils';
 
 export default function UploadJson() {
     const [prestadores, setPrestadores] = useState([]);
@@ -33,7 +34,7 @@ export default function UploadJson() {
                 if (!res.ok) throw new Error(data?.message || 'Error al obtener los prestadores');
                 setPrestadores(data || []);
             } catch (e) {
-                setErr(e?.message || 'Error al obtener los prestadores');
+                showError(e?.message || 'Error al obtener los prestadores');
             }
         })();
     }, []);
@@ -99,14 +100,17 @@ export default function UploadJson() {
         setMsg(null);
         setErr(null);
 
-        if (!prestadorId) return setErr('Seleccione un prestador');
+        if (!prestadorId) return showError('Seleccione un prestador');
+        if (!periodoFac) return showError('Seleccione un periodo');
+        if (!anio) return showError('Seleccione un año');
+        if (!file && !jsonText) return showError('Seleccione un archivo o un JSON');
 
         let parsed = null;
         if (!file) {
             try {
                 parsed = JSON.parse(jsonText);
             } catch {
-                return setErr('El JSON no es válido');
+                return showError('El JSON no es válido');
             }
         }
 
@@ -138,10 +142,11 @@ export default function UploadJson() {
             }
 
             data = await res.json();
-            if (!res.ok) return setErr(data?.message || 'Error en la carga');
+            if (!res.ok) return showError(data?.message || 'Error en la carga');
+            //TODO VER SI FUNCIONA BIEN 
 
-            setMsg(data?.message || 'Carga realizada correctamente');
-            if (data?.radicado) setMsg(prev => `${prev} - Radicado: ${data.radicado}`);
+            showSuccess(data?.message || 'Carga realizada correctamente');
+            if (data?.radicado) showSuccess(prev => `${prev} - Radicado: ${data.radicado}`);
         } finally {
             setLoading(false);
         }
