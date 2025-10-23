@@ -1,7 +1,21 @@
-const db = require('../models');
-const { sequelize, Transaccion, Users, Control, Prestador, Consultas, Procedimiento, Hospitalizaciones, RecienNacido, Urgencias, Medicamento, OtroServicio, UserTransaction } = db;
+import db from '../models/index.js';
+const {
+    sequelize,
+    Transaccion,
+    Users,
+    Control,
+    Prestador,
+    Consultas,
+    Procedimiento,
+    Hospitalizaciones,
+    RecienNacido,
+    Urgencias,
+    Medicamento,
+    OtroServicio,
+    UserTransaction
+} = db;
 
-exports.searchByFactura = async (req, res) => {
+export const searchByFactura = async (req, res) => {
     const { num_factura, user_id } = req.query;
 
     console.log(' Buscando factura:', num_factura);
@@ -28,7 +42,7 @@ exports.searchByFactura = async (req, res) => {
                     model: Users,
                     through: UserTransaction,
                     required: false,
-                    attributes: ['id', 'tipo_doc', 'num_doc', 'tipo_usuario', 'cod_sexo'] // Only include existing columns
+                    attributes: ['id', 'tipo_doc', 'num_doc', 'tipo_usuario', 'cod_sexo']
                 }
             ]
         });
@@ -39,12 +53,10 @@ exports.searchByFactura = async (req, res) => {
             return res.status(404).json({ message: 'No se encontró la factura' });
         }
 
-        // Si no hay usuarios asociados, retornar un error
         if (!transaccion.Users || transaccion.Users.length === 0) {
             return res.status(404).json({ message: 'No se encontraron usuarios asociados a esta factura' });
         }
 
-        // Si hay múltiples usuarios y no se especificó uno, retornar la lista de usuarios
         if (transaccion.Users.length > 1 && !user_id) {
             return res.status(200).json({
                 transaccion,
@@ -59,7 +71,6 @@ exports.searchByFactura = async (req, res) => {
             });
         }
 
-        // Si se especificó un usuario o solo hay uno, buscar sus datos
         const userId = user_id || transaccion.Users[0].id;
         console.log('👤 User ID:', userId);
 
@@ -83,13 +94,12 @@ exports.searchByFactura = async (req, res) => {
             otrosServicios: otrosServicios.length
         });
 
-        // Encontrar el usuario específico de la lista de usuarios
         const selectedUser = transaccion.Users.find(user => user.id === parseInt(userId));
 
         const response = {
             transaccion,
             control: transaccion.Control,
-            usuario: selectedUser, // Enviamos el usuario seleccionado
+            usuario: selectedUser,
             consultas,
             procedimientos,
             hospitalizaciones,

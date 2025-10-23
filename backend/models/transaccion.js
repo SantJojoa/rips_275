@@ -1,8 +1,6 @@
-'use strict';
-const {
-  Model
-} = require('sequelize');
-module.exports = (sequelize, DataTypes) => {
+import { Model } from 'sequelize';
+
+export default (sequelize, DataTypes) => {
   class Transaccion extends Model {
     /**
      * Helper method for defining associations.
@@ -25,7 +23,7 @@ module.exports = (sequelize, DataTypes) => {
   Transaccion.init({
     num_nit: DataTypes.INTEGER,
     num_factura: DataTypes.STRING,
-    valor_favtura: DataTypes.FLOAT,
+    valor_factura: DataTypes.FLOAT,
     tipo_nota: DataTypes.STRING,
     num_nota: DataTypes.STRING,
     fecha: DataTypes.DATE

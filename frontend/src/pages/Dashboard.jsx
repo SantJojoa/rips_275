@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { getUser, isAdmin } from '../lib/auth';
-import { Search, Upload, UserPlus } from "lucide-react";
+import { Search, Upload, UserPlus, List } from "lucide-react";
 
 export default function Dashboard() {
     const navigate = useNavigate();
@@ -34,6 +34,13 @@ export default function Dashboard() {
                     action: () => navigate('/create-user'),
                     color: "amber",
                 },
+                {
+                    title: "Gestionar facturas",
+                    description: "Listar y gestionar facturas.",
+                    icon: List,
+                    action: () => navigate('/gestionar-facturas'),
+                    color: "red",
+                },
             ]
             : []),
     ];
@@ -52,6 +59,7 @@ export default function Dashboard() {
                         blue: "hover:bg-blue-500 hover:border-blue-500 hover:text-white",
                         green: "hover:bg-green-500 hover:border-green-500 hover:text-white",
                         amber: "hover:bg-amber-500 hover:border-amber-500 hover:text-white",
+                        red: "hover:bg-red-500 hover:border-red-500 hover:text-white",
                     };
 
                     return (

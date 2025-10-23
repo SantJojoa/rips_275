@@ -15,11 +15,15 @@ const sequelize = new Sequelize(
     }
 );
 
-try {
-    await sequelize.authenticate();
-    console.log('✅ ----> Conexión exitosa a la base de datos // db.js');
-} catch (error) {
-    console.error('❌ ----> Error al conectar a la base de datos // db.js', error);
-}
+// Función async para probar conexión
+(async () => {
+    try {
+        await sequelize.authenticate();
+        console.log('✅ ----> Conexión exitosa a la base de datos // db.js');
+
+    } catch (error) {
+        console.error('❌ ----> Error al conectar a la base de datos // db.js', error);
+    }
+})();
 
 export default sequelize;

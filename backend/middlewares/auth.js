@@ -1,6 +1,6 @@
-const jwt = require('jsonwebtoken');
+import jwt from 'jsonwebtoken';
 
-const authenticate = (req, res, next) => {
+export const authenticate = (req, res, next) => {
     const authHeader = req.headers['authorization'];
     if (!authHeader) {
         return res.status(401).json({ message: 'Token no proporcionado' });
@@ -28,11 +28,9 @@ const authenticate = (req, res, next) => {
     }
 };
 
-const authorize = (req, res, next) => {
+export const authorize = (req, res, next) => {
     if (!req.user || String(req.user.role).toUpperCase() !== 'ADMIN') {
         return res.status(403).json({ message: 'Acceso denegado: se requiere rol ADMIN' });
     }
     next();
 };
-
-module.exports = { authenticate, authorize };

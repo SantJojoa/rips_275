@@ -1,8 +1,9 @@
-const express = require('express');
-const cors = require('cors')
-const dotenv = require('dotenv');
-const authRoutes = require('./routes/auth');
-const db = require('./models');
+import express from 'express';
+import cors from 'cors'
+import dotenv from 'dotenv';
+import authRoutes from './routes/auth.js';
+import billsRoutes from './routes/bills.js';
+import db from './models/index.js';
 
 dotenv.config();
 
@@ -18,6 +19,7 @@ app.use(express.json());
 
 // Rutas de autenticación (incluyen rutas de importación RIPS)
 app.use('/api/auth', authRoutes);
+app.use('/api/bills', billsRoutes);
 
 const PORT = process.env.PORT || 3000;
 
@@ -28,3 +30,5 @@ db.sequelize.sync().then(() => {
         console.log(`✅ ----> Servidor corriendo en el puerto ${PORT}`);
     });
 }).catch(err => console.error('Error al sincronizar la DB:', err));
+
+export default app;

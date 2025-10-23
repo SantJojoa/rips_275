@@ -1,16 +1,14 @@
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-const db = require('../models');
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import dotenv from 'dotenv';
+import db from '../models/index.js'; // Ajusta si tu export default es db
 const { SystemUser } = db;
-
-
-const dotenv = require('dotenv');
 
 dotenv.config();
 
 const SALT_ROUNDS = 10;
 
-const register = async (req, res) => {
+export const register = async (req, res) => {
     const { username, nombres, apellidos, cedula, password, role = 'USER' } = req.body;
     try {
         const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
@@ -26,9 +24,9 @@ const register = async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: 'Error al crear el usuario', error });
     }
-}
+};
 
-const login = async (req, res) => {
+export const login = async (req, res) => {
     const { username, password } = req.body;
     try {
         const user = await SystemUser.findOne({ where: { username } });
@@ -55,7 +53,7 @@ const login = async (req, res) => {
     }
 };
 
-const getProfile = async (req, res) => {
+export const getProfile = async (req, res) => {
     try {
         const user = await SystemUser.findByPk(req.user.id, {
             attributes: { exclude: ['password'] }
@@ -67,5 +65,3 @@ const getProfile = async (req, res) => {
         res.status(500).json({ message: 'Error al obtener perfil', error });
     }
 };
-
-module.exports = { register, login, getProfile };

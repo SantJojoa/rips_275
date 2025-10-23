@@ -1,4 +1,5 @@
-const db = require('../models');
+import db from '../models/index.js';
+import fs from 'fs';
 
 const {
     sequelize,
@@ -15,6 +16,7 @@ const {
     OtroServicio,
 } = db;
 
+// Función auxiliar pick
 function pick(...options) {
     for (const fn of options) {
         const v = typeof fn === 'function' ? fn() : undefined;
@@ -23,30 +25,30 @@ function pick(...options) {
     return undefined;
 }
 
+// Crear o actualizar usuario
 async function getOrCreateUserByDoc(t, cache, tipo_doc, num_doc, extra = {}) {
     const key = `${tipo_doc}|${num_doc}`;
     const applyUpdatesIfNeeded = async (user, extraObj) => {
         if (!extraObj || typeof extraObj !== 'object') return user;
 
         const updates = {};
-
         for (const [k, v] of Object.entries(extraObj)) {
             if (v === undefined || v === null) continue;
-
             if (user[k] === undefined || user[k] === null) updates[k] = v;
         }
-
         if (Object.keys(updates).length > 0) {
             await user.update(updates, { transaction: t || undefined });
             Object.assign(user, updates);
         }
         return user;
-    }
+    };
+
     if (cache.has(key)) {
         const cached = cache.get(key);
         await applyUpdatesIfNeeded(cached, extra);
         return cached;
     }
+
     let user = await Users.findOne({ where: { tipo_doc, num_doc }, transaction: t || undefined });
 
     if (user) {
@@ -56,20 +58,14 @@ async function getOrCreateUserByDoc(t, cache, tipo_doc, num_doc, extra = {}) {
     }
 
     user = await Users.create(
-        {
-            tipo_doc,
-            num_doc,
-            ...extra,
-        },
+        { tipo_doc, num_doc, ...extra },
         { transaction: t || undefined }
-    )
+    );
     cache.set(key, user);
     return user;
 }
 
-
-
-
+// Resolver documento de usuario
 function resolveUserDocFromItem(item) {
     const tipo = pick(
         () => item?.tipoDocumentoIdentificacion,
@@ -78,8 +74,6 @@ function resolveUserDocFromItem(item) {
         () => item?.tipoDoc,
         () => item?.tipo_documento,
         () => item?.usuario?.tipoDoc
-
-
     );
     const num = pick(
         () => item?.numDocumentoIdentificacion,
@@ -92,11 +86,10 @@ function resolveUserDocFromItem(item) {
     return { tipo_doc: tipo, num_doc: num };
 }
 
-// Función para procesar servicios de un usuario específico
+// Procesar servicios de un usuario
 async function procesarServiciosUsuario(t, userCache, usuario, usuarioData, created) {
     const servicios = usuarioData?.servicios || usuarioData?.Servicios || {};
 
-    // Procesar servicios anidados (consultas, procedimientos, etc.)
     const nestedCollections = [
         { key: 'consultas', Model: Consultas, counter: 'consultas' },
         { key: 'procedimientos', Model: Procedimiento, counter: 'procedimientos' },
@@ -129,12 +122,11 @@ async function procesarServiciosUsuario(t, userCache, usuario, usuarioData, crea
     }
 }
 
-
-exports.uploadRipsJsonFile = async (req, res) => {
+// Subir archivo JSON RIPS
+export const uploadRipsJsonFile = async (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ message: 'Falta archivo RIPS' });
 
-        const fs = require('fs');
         const text = fs.readFileSync(req.file.path, 'utf8');
         let dataObj = null;
         try {
@@ -142,18 +134,16 @@ exports.uploadRipsJsonFile = async (req, res) => {
         } catch (error) {
             return res.status(400).json({ message: 'Error al parsear el archivo RIPS', error: String(error) });
         }
-        req.body = {
-            ...req.body,
-            data: dataObj,
-            route: req.file.path,
-        }
-        return exports.uploadRipsJson(req, res);
+
+        req.body = { ...req.body, data: dataObj, route: req.file.path };
+        return uploadRipsJson(req, res);
     } catch (error) {
         return res.status(500).json({ message: 'Error al procesar el JSON', error: String(error) });
     }
-}
+};
 
-exports.uploadRipsJson = async (req, res) => {
+// Subir datos JSON RIPS
+export const uploadRipsJson = async (req, res) => {
     const { id: id_system_user } = req.user || {};
     const {
         prestadorId: id_prestador,
@@ -170,9 +160,7 @@ exports.uploadRipsJson = async (req, res) => {
 
     try {
         let prestador = null;
-        if (id_prestador) {
-            prestador = await Prestador.findByPk(id_prestador);
-        }
+        if (id_prestador) prestador = await Prestador.findByPk(id_prestador);
         if (!prestador && req.body.prestadorNit) {
             prestador = await Prestador.findOne({ where: { nit: req.body.prestadorNit } });
         }
@@ -211,18 +199,15 @@ exports.uploadRipsJson = async (req, res) => {
             otrosServicios: 0,
         };
 
-        const userCache = new Map()
-
+        const userCache = new Map();
         const usuariosArr = ripsData.usuarios || ripsData.Usuarios || ripsData.users || ripsData.afiliados || [];
 
         let principalUser = null;
         let control = null;
 
         await sequelize.transaction(async (t) => {
-
             console.log('[IMPORT] Iniciando transacción...');
 
-            // Procesar múltiples usuarios si existen
             if (Array.isArray(usuariosArr) && usuariosArr.length > 0) {
                 console.log(`[IMPORT] Procesando ${usuariosArr.length} usuarios`);
 
@@ -239,7 +224,6 @@ exports.uploadRipsJson = async (req, res) => {
                     );
 
                     if (tipo_doc && num_doc) {
-                        // Crear o encontrar el usuario
                         const usuario = await getOrCreateUserByDoc(
                             t,
                             userCache,
@@ -257,21 +241,17 @@ exports.uploadRipsJson = async (req, res) => {
                             }
                         );
 
-                        // Si es el primer usuario, lo guardamos como principalUser para la transacción
-                        if (!principalUser) {
-                            principalUser = usuario;
-                        }
+                        if (!principalUser) principalUser = usuario;
 
                         created.usuarios += 1;
 
-                        // Procesar servicios específicos de este usuario
                         await procesarServiciosUsuario(t, userCache, usuario, usuarioData, created);
-
                         console.log(`[IMPORT] Usuario procesado: ${tipo_doc} ${num_doc}`);
                     }
                 }
             }
 
+            // Crear control
             const routeFromBody = req.body.route;
             console.log('[IMPORT] Creando control...', { id_system_user, id_prestador, periodoFac, anioInt, routeFromBody, statusNorm });
             control = await Control.create(
@@ -288,7 +268,7 @@ exports.uploadRipsJson = async (req, res) => {
             console.log('[IMPORT] Control creado con ID:', control.id);
             created.controlId = control.id;
 
-            // Validar si ya existe una factura con el mismo número y NIT
+            // Validar factura duplicada
             const existingTransaction = await Transaccion.findOne({
                 where: {
                     num_nit: parseInt(String(nit), 10),
@@ -296,9 +276,8 @@ exports.uploadRipsJson = async (req, res) => {
                 },
                 transaction: t
             });
-
             if (existingTransaction) {
-                throw new Error(`Ya existe una factura registrada con el número ${numFactura} para el NIT ${nit}. No se puede procesar una factura duplicada.`);
+                throw new Error(`Ya existe una factura registrada con el número ${numFactura} para el NIT ${nit}.`);
             }
 
             const trx = await Transaccion.create(
@@ -313,14 +292,13 @@ exports.uploadRipsJson = async (req, res) => {
             );
             created.transaccionId = trx.id;
 
-            // Asociar todos los usuarios procesados a la transacción
             const processedUsers = Array.from(userCache.values());
             if (processedUsers.length > 0) {
                 await trx.addUsers(processedUsers, { transaction: t });
                 console.log(`[IMPORT] Asociados ${processedUsers.length} usuarios a la transacción`);
             }
 
-            // Procesar servicios raíz (no asociados a usuarios específicos)
+            // Procesar servicios raíz
             const collections = [
                 { key: 'consultas', Model: Consultas, counter: 'consultas' },
                 { key: 'procedimientos', Model: Procedimiento, counter: 'procedimientos' },
@@ -357,8 +335,6 @@ exports.uploadRipsJson = async (req, res) => {
 
         console.log('[IMPORT] Transacción completada exitosamente');
 
-        // Recargar el control para obtener el numero_radicado actualizado
-        console.log('[IMPORT] Recargando control para obtener numero_radicado...');
         await control.reload();
         console.log('[IMPORT] Control recargado - numero_radicado:', control.numero_radicado);
 
@@ -366,19 +342,9 @@ exports.uploadRipsJson = async (req, res) => {
             message: 'Carga realizada correctamente',
             radicado: control.numero_radicado || `${new Date().getFullYear()}-${control.id}`,
             controlId: control.id,
-            created: {
-                controlId: control.id,
-                transaccionId: created.transaccionId || null,
-                usuarios: created.usuarios || 0,
-                consultas: created.consultas || 0,
-                procedimientos: created.procedimientos || 0,
-                hospitalizaciones: created.hospitalizaciones || 0,
-                recienNacidos: created.recienNacidos || 0,
-                urgencias: created.urgencias || 0,
-                medicamentos: created.medicamentos || 0,
-                otrosServicios: created.otrosServicios || 0,
-            }
+            created,
         });
+
     } catch (error) {
         console.error('[IMPORT] Error durante el proceso de importación:', error);
         return res.status(500).json({

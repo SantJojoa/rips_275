@@ -1,10 +1,10 @@
-const express = require("express")
-const { register, login, getProfile } = require('../controllers/authController.js')
-const { authenticate, authorize } = require('../middlewares/auth.js')
-const { uploadRipsJson, uploadRipsJsonFile } = require('../controllers/importController.js')
-const { searchByFactura } = require('../controllers/queryControllers.js')
-const db = require('../models');
-const multer = require('multer');
+import express from "express"
+import { register, login, getProfile } from '../controllers/authController.js'
+import { authenticate, authorize } from '../middlewares/auth.js'
+import { uploadRipsJson, uploadRipsJsonFile } from '../controllers/importController.js'
+import { searchByFactura } from '../controllers/queryControllers.js'
+import db from '../models/index.js';
+import multer from 'multer';
 
 const upload = multer({ dest: 'uploads/' });
 const router = express.Router()
@@ -36,4 +36,4 @@ router.post('/upload-json-file', authenticate, authorize, upload.single('file'),
 
 
 router.get('/search/factura', authenticate, searchByFactura);
-module.exports = router;
+export default router;

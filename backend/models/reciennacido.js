@@ -1,7 +1,6 @@
-'use strict';
-const { Model } = require('sequelize');
+import { Model } from 'sequelize';
 
-module.exports = (sequelize, DataTypes) => {
+export default (sequelize, DataTypes) => {
   class RecienNacido extends Model {
     static associate(models) {
       // Usa exactamente el nombre exportado en index.js
