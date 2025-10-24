@@ -1,5 +1,5 @@
 import express from "express"
-import { register, login, getProfile } from '../controllers/authController.js'
+import { login, getProfile, createUser } from '../controllers/authController.js'
 import { authenticate, authorize } from '../middlewares/auth.js'
 import { uploadRipsJson, uploadRipsJsonFile } from '../controllers/importController.js'
 import { searchByFactura } from '../controllers/queryControllers.js'
@@ -10,9 +10,9 @@ const upload = multer({ dest: 'uploads/' });
 const router = express.Router()
 
 
-router.post('/register', register);
 router.post('/login', login);
 router.get('/profile', authenticate, getProfile);
+router.post('/create-user', authenticate, authorize, createUser);
 
 
 

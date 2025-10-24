@@ -8,11 +8,19 @@ dotenv.config();
 
 const SALT_ROUNDS = 10;
 
-export const register = async (req, res) => {
-    const { username, nombres, apellidos, cedula, password, role = 'USER' } = req.body;
+export const createUser = async (req, res) => {
     try {
+        if (req.user.role !== 'ADMIN') return res.status(401).json({ message: 'No tienes permiso para crear usuarios' });
+        const { username, nombres, apellidos, cedula, password, role = 'USER' } = req.body;
+        if (!username || !password || !nombres || !apellidos || !cedula) {
+            return res.status(400).json({ message: 'Todos los campos son obligatorios' });
+        }
+        const existing = await SystemUser.findOne({ where: { username } });
+        if (existing) {
+            return res.status(400).json({ message: 'El nombre de usuario ya está registrado' });
+        }
         const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
-        const user = await SystemUser.create({
+        const newUser = await SystemUser.create({
             username,
             nombres,
             apellidos,
@@ -20,7 +28,16 @@ export const register = async (req, res) => {
             password: hashedPassword,
             role
         });
-        res.status(201).json({ message: 'Usuario creado exitosamente', user });
+        res.status(201).json({
+            message: 'Usuario creado exitosamente', user: {
+                id: newUser.id,
+                username: newUser.username,
+                nombres: newUser.nombres,
+                apellidos: newUser.apellidos,
+                cedula: newUser.cedula,
+                role: newUser.role
+            }
+        });
     } catch (error) {
         res.status(500).json({ message: 'Error al crear el usuario', error });
     }
