@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 
 
+
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { getToken } from './lib/auth'
 import Login from './pages/Login.jsx'
@@ -16,6 +17,7 @@ import ListBills from './pages/ListBills.jsx'
 
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+
 
 function PrivateRoute({ children }) {
   return getToken() ? <Layout>{children}</Layout> : <Navigate to="/login" />

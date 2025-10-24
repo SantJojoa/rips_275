@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import DataTable from "react-data-table-component";
 import { fetchBills, deleteBill, updateBill } from "../api/billsApi";
-import { Edit, Save, Trash2 } from "lucide-react"; // 👈 íconos
+import { Edit, Save, Trash2 } from "lucide-react";
 
 export default function BillsTable() {
     const [bills, setBills] = useState([]);
@@ -178,23 +178,31 @@ export default function BillsTable() {
     };
 
     return (
-        <div className="p-8 bg-slate-100 min-h-screen">
-            <h1 className="text-3xl font-bold mb-8 text-slate-800">Facturas</h1>
+        <div className="p-6 flex items-center justify-center">
+            <div className="w-full max-w-5xl border border-slate-200 shadow-lg bg-white rounded-3xl p-10 transition">
+                <div className="text-center mb-8">
+                    <h1 className="text-3xl font-semibold text-slate-900 tracking-tight mb-4">
+                        Gestión de facturas
+                    </h1>
+                    <p className="text-slate-500 text-sm">Lista, edita y elimina las facturas registradas.</p>
+                </div>
 
-            <div className="rounded-xl border border-slate-200 shadow-lg bg-white overflow-hidden">
-                <DataTable
-                    columns={columns}
-                    data={bills}
-                    pagination
-                    highlightOnHover
-                    dense={false} // 👈 tabla más espaciosa
-                    customStyles={customStyles}
-                    noDataComponent={
-                        <div className="p-8 text-center text-slate-500 text-sm">
-                            No hay facturas registradas.
-                        </div>
-                    }
-                />
+                <div className="rounded-xl shadow-lg bg-white overflow-hidden">
+                    <DataTable
+                        className="rounded-xl"
+                        columns={columns}
+                        data={bills}
+                        pagination
+                        highlightOnHover
+                        dense={false}
+                        customStyles={customStyles}
+                        noDataComponent={
+                            <div className="p-8 text-center text-slate-500 text-sm">
+                                No hay facturas registradas.
+                            </div>
+                        }
+                    />
+                </div>
             </div>
         </div>
     );
