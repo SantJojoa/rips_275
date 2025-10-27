@@ -31,7 +31,7 @@ export default function Dashboard() {
                     title: "Crear Usuario",
                     description: "Crea nuevos usuarios para gestionar el sistema.",
                     icon: UserPlus,
-                    action: () => navigate('/create-user'),
+                    action: () => navigate('/crear-usuario'),
                     color: "amber",
                 },
                 {
