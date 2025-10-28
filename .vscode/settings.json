@@ -1,6 +1,7 @@
 {
     "cSpell.words": [
         "anio",
+        "codigo",
         "factured",
         "Hospitalizacion",
         "IDSN",
@@ -8,7 +9,9 @@
         "Recien",
         "systemuser",
         "transaccion",
-        "Transaccion"
+        "Transaccion",
+        "Unico",
+        "Validacion"
     ],
     "postman.settings.dotenv-detection-notification-visibility": false
 }
