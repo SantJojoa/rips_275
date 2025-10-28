@@ -15,7 +15,6 @@ const sequelize = new Sequelize(
     }
 );
 
-// Función async para probar conexión
 (async () => {
     try {
         await sequelize.authenticate();
