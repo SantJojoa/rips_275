@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { getUser, isAdmin } from '../lib/auth';
-import { Search, Upload, UserPlus, List } from "lucide-react";
+import { Search, Upload, UserPlus, List, Database, Download } from "lucide-react";
 
 export default function Dashboard() {
     const navigate = useNavigate();
@@ -12,14 +12,29 @@ export default function Dashboard() {
 
     const cards = [
         {
+            title: "Consultar CUV",
+            description: "Consulta CUV en la base de datos del Ministerio de Salud.",
+            icon: Database,
+            action: () => navigate('/consultar-cuv'),
+            color: "purple",
+        },
+        {
             title: "Consultar registros",
             description: "Busca y revisa registros existentes con facilidad.",
             icon: Search,
             action: () => navigate('/consultar'),
             color: "blue",
         },
+
         ...(admin
             ? [
+                {
+                    title: "Descargar JSON",
+                    description: "Descarga archivos RIPS en formato JSON desde la plataforma del Ministerio de Salud.",
+                    icon: Download,
+                    action: () => navigate('/descargar-json'),
+                    color: "cyan",
+                },
                 {
                     title: "Subir JSON",
                     description: "Carga archivos RIPS en formato JSON de manera rápida.",
@@ -60,6 +75,9 @@ export default function Dashboard() {
                         green: "hover:bg-green-500 hover:border-green-500 hover:text-white",
                         amber: "hover:bg-amber-500 hover:border-amber-500 hover:text-white",
                         red: "hover:bg-red-500 hover:border-red-500 hover:text-white",
+                        purple: "hover:bg-purple-500 hover:border-purple-500 hover:text-white",
+                        cyan: "hover:bg-cyan-500 hover:border-cyan-500 hover:text-white",
+
                     };
 
                     return (

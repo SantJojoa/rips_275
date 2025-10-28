@@ -1,4 +1,5 @@
 import db from '../models/index.js';
+import axios from 'axios';
 const {
     sequelize,
     Transaccion,
@@ -115,5 +116,58 @@ export const searchByFactura = async (req, res) => {
     } catch (error) {
         console.error('❌ Error en searchByFactura:', error);
         return res.status(500).json({ message: 'Error al buscar la factura', error: String(error) });
+    }
+};
+
+export const consultarCUV = async (req, res) => {
+    const { codigoUnicoValidacion } = req.body;
+
+    console.log('🔍 Consultando CUV:', codigoUnicoValidacion);
+
+    if (!codigoUnicoValidacion) {
+        return res.status(400).json({ message: 'El código CUV es requerido' });
+    }
+
+    try {
+        // Hacer POST a la API externa
+        const response = await axios.post(
+            'https://localhost:9443/api/ConsultasFevRips/ConsultarCUV',
+            { codigoUnicoValidacion },
+            {
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                // Deshabilitar verificación SSL para localhost (solo desarrollo)
+                httpsAgent: new (await import('https')).Agent({
+                    rejectUnauthorized: false
+                })
+            }
+        );
+
+        console.log('✅ Respuesta recibida de la API externa');
+        return res.status(200).json(response.data);
+
+    } catch (error) {
+        console.error('❌ Error al consultar CUV:', error.message);
+
+        if (error.response) {
+            // El servidor respondió con un código de estado fuera del rango 2xx
+            return res.status(error.response.status).json({
+                message: 'Error en la API externa',
+                error: error.response.data
+            });
+        } else if (error.request) {
+            // La petición fue hecha pero no se recibió respuesta
+            return res.status(503).json({
+                message: 'No se pudo conectar con la API externa',
+                error: error.message
+            });
+        } else {
+            // Algo pasó al configurar la petición
+            return res.status(500).json({
+                message: 'Error al procesar la solicitud',
+                error: error.message
+            });
+        }
     }
 };
