@@ -152,6 +152,11 @@ export const consultarCUV = async (req, res) => {
 
         if (error.response) {
             // El servidor respondió con un código de estado fuera del rango 2xx
+            // Pero si tiene datos (como ResultadosValidacion), devolverlos con 200
+            if (error.response.data && (error.response.data.ResultadosValidacion || error.response.data.ResultState !== undefined)) {
+                console.log('⚠️ API externa devolvió error con datos de validación');
+                return res.status(200).json(error.response.data);
+            }
             return res.status(error.response.status).json({
                 message: 'Error en la API externa',
                 error: error.response.data

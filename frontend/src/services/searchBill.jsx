@@ -33,7 +33,9 @@ export const consultarCUV = async (codigoUnicoValidacion) => {
 
     const result = await response.json();
 
-    if (!response.ok) {
+    // Si la respuesta tiene ResultadosValidacion o ResultState, es una respuesta válida
+    // aunque contenga errores de validación
+    if (!response.ok && !result.ResultadosValidacion && result.ResultState === undefined) {
         throw new Error(result.message || 'Error al consultar el CUV');
     }
 

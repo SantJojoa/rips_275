@@ -22,8 +22,17 @@ export default function SearchCuv() {
 
         try {
             const data = await consultarCUV(cuv.trim());
-            setResult(data);
-            toast.success('Consulta CUV exitosa');
+
+            // Verificar si la respuesta tiene ResultState false (error de validación)
+            if (data.ResultState === false || data.EsValido === false) {
+                setResult(data);
+                if (data.ResultState === false) {
+                    toast.warning('CUV con errores de validación');
+                }
+            } else {
+                setResult(data);
+                toast.success('Consulta CUV exitosa');
+            }
         } catch (err) {
             setError(err.message || 'Error al consultar el CUV');
             toast.error(err.message || 'Error al consultar el CUV');
@@ -48,12 +57,10 @@ export default function SearchCuv() {
     };
 
     const extractCuvFromText = (text) => {
-        // Intentar parsear como JSON primero
         try {
             const json = JSON.parse(text);
             return json.CodigoUnicoValidacion || json.codigoUnicoValidacion;
         } catch {
-            // Si no es JSON, buscar con regex en el texto
             const regex = /["']?CodigoUnicoValidacion["']?\s*:\s*["']([^"']+)["']/i;
             const match = text.match(regex);
             return match ? match[1] : null;
@@ -201,7 +208,6 @@ export default function SearchCuv() {
                 </div>
             </div>
 
-            {/* Resultados */}
             {error && (
                 <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 flex items-start gap-3">
                     <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
@@ -213,28 +219,65 @@ export default function SearchCuv() {
             )}
 
             {result && (
-                <div className={`rounded-lg p-6 mb-6 border-2 ${result.EsValido
+                <div className={`rounded-lg p-6 mb-6 border-2 ${(result.EsValido === true || result.ResultState === true)
                         ? 'bg-green-50 border-green-200'
                         : 'bg-red-50 border-red-200'
                     }`}>
                     <div className="flex items-start gap-3 mb-6">
-                        {result.EsValido ? (
+                        {(result.EsValido === true || result.ResultState === true) ? (
                             <CheckCircle2 className="w-6 h-6 text-green-600 mt-0.5 flex-shrink-0" />
                         ) : (
                             <AlertCircle className="w-6 h-6 text-red-600 mt-0.5 flex-shrink-0" />
                         )}
-                        <div>
-                            <h4 className={`text-xl font-bold mb-1 ${result.EsValido ? 'text-green-800' : 'text-red-800'
+                        <div className="flex-1">
+                            <h4 className={`text-xl font-bold mb-1 ${(result.EsValido === true || result.ResultState === true) ? 'text-green-800' : 'text-red-800'
                                 }`}>
-                                {result.EsValido ? 'CUV Válido' : 'CUV No Válido'}
+                                {(result.EsValido === true || result.ResultState === true) ? 'CUV Válido' : 'CUV Rechazado'}
                             </h4>
-                            <p className={result.EsValido ? 'text-green-700' : 'text-red-700'}>
-                                {result.EsValido
+                            <p className={(result.EsValido === true || result.ResultState === true) ? 'text-green-700' : 'text-red-700'}>
+                                {(result.EsValido === true || result.ResultState === true)
                                     ? 'La información del CUV ha sido validada exitosamente'
-                                    : 'El CUV consultado no es válido'}
+                                    : result.CodigoUnicoValidacionToShow || 'El CUV consultado fue rechazado'}
                             </p>
                         </div>
                     </div>
+
+                    {/* Mostrar observaciones si hay errores de validación */}
+                    {result.ResultadosValidacion && result.ResultadosValidacion.length > 0 && (
+                        <div className="mb-6 bg-red-50 border border-red-300 rounded-lg p-4">
+                            <h5 className="font-semibold text-red-800 mb-3 flex items-center gap-2">
+                                <AlertCircle className="w-5 h-5" />
+                                Errores de Validación
+                            </h5>
+                            <div className="space-y-3">
+                                {result.ResultadosValidacion.map((validacion, index) => (
+                                    <div key={index} className="bg-white rounded-lg p-4 border border-red-200">
+                                        <div className="flex items-start gap-2 mb-2">
+                                            <span className="inline-flex items-center px-2 py-1 rounded text-xs font-semibold bg-red-100 text-red-800">
+                                                {validacion.Clase}
+                                            </span>
+                                            <span className="inline-flex items-center px-2 py-1 rounded text-xs font-semibold bg-slate-100 text-slate-700">
+                                                {validacion.Codigo}
+                                            </span>
+                                        </div>
+                                        <p className="text-sm font-semibold text-slate-800 mb-1">
+                                            {validacion.Descripcion}
+                                        </p>
+                                        {validacion.Observaciones && (
+                                            <p className="text-sm text-red-700 bg-red-50 p-2 rounded mt-2">
+                                                <span className="font-semibold">Observación:</span> {validacion.Observaciones}
+                                            </p>
+                                        )}
+                                        {validacion.PathFuente && (
+                                            <p className="text-xs text-slate-600 mt-2">
+                                                <span className="font-semibold">Fuente:</span> {validacion.PathFuente} ({validacion.Fuente})
+                                            </p>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
 
                     <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
                         <div className="overflow-x-auto">
@@ -245,11 +288,11 @@ export default function SearchCuv() {
                                             Estado
                                         </td>
                                         <td className="px-6 py-4 text-sm text-slate-900">
-                                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${result.EsValido
+                                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${(result.EsValido === true || result.ResultState === true)
                                                     ? 'bg-green-100 text-green-800'
                                                     : 'bg-red-100 text-red-800'
                                                 }`}>
-                                                {result.EsValido ? '✓ Válido' : '✗ No Válido'}
+                                                {(result.EsValido === true || result.ResultState === true) ? '✓ Válido' : '✗ Rechazado'}
                                             </span>
                                         </td>
                                     </tr>
@@ -266,7 +309,9 @@ export default function SearchCuv() {
                                             Código Único de Validación (CUV)
                                         </td>
                                         <td className="px-6 py-4 text-sm text-slate-900 font-mono break-all">
-                                            {result.CodigoUnicoValidacion || 'N/A'}
+                                            {result.CodigoUnicoValidacion && result.CodigoUnicoValidacion !== '-'
+                                                ? result.CodigoUnicoValidacion
+                                                : (result.CodigoUnicoValidacionToShow || 'N/A')}
                                         </td>
                                     </tr>
                                     <tr className="hover:bg-slate-50">
