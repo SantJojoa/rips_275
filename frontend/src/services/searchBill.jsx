@@ -19,3 +19,23 @@ export const SearchBill = async (numFactura, userId = null) => {
 
     return result;
 };
+
+export const consultarCUV = async (codigoUnicoValidacion) => {
+    if (!codigoUnicoValidacion || !codigoUnicoValidacion.trim()) {
+        throw new Error('Por favor ingrese un código CUV');
+    }
+
+    const url = '/api/auth/consultar-cuv';
+    const response = await apiFetch(url, {
+        method: 'POST',
+        body: JSON.stringify({ codigoUnicoValidacion: codigoUnicoValidacion.trim() })
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+        throw new Error(result.message || 'Error al consultar el CUV');
+    }
+
+    return result;
+};
