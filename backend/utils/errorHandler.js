@@ -5,12 +5,21 @@ export const handleControllerError = (res, error) => {
     const status = error.status || 500;
     const message = error.message || 'Error interno del servidor';
 
-    res.status(status).json({ message });
+    const response = { message }
+
+    if (error.details && process.env.NODE_ENV === 'development') {
+        response.details = error.details;
+    }
+
+    res.status(status).json(response);
 };
 
 
-export const createError = (status, message) => {
+export const createError = (status, message, details = null) => {
     const error = new Error(message);
     error.status = status;
+    if (details) {
+        error.details = details;
+    }
     return error;
 };

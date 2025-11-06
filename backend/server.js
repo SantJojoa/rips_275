@@ -17,6 +17,11 @@ app.use(cors({
 
 app.use(express.json());
 
+if (process.env.NODE_ENV !== 'production') {
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+    console.log('⚠️  Verificación SSL deshabilitada (solo desarrollo)');
+}
+
 // Rutas de autenticación (incluyen rutas de importación RIPS)
 app.use('/api/auth', authRoutes);
 app.use('/api/bills', billsRoutes);

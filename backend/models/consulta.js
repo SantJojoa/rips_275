@@ -3,12 +3,10 @@ import { Model } from 'sequelize';
 export default (sequelize, DataTypes) => {
   class Consultas extends Model {
     static associate(models) {
-      // define asociación con Users
       Consultas.belongsTo(models.Users, { foreignKey: 'id_user' });
     }
   }
 
-  // Usa el mismo nombre de la clase
   Consultas.init({
     tipo_doc_user: DataTypes.STRING,
     num_doc_user: DataTypes.STRING,

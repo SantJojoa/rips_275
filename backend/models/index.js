@@ -25,11 +25,9 @@ for (const file of modelFiles) {
   const modelPath = path.join(__dirname, file);
   const module = await import(pathToFileURL(modelPath).href);
   const model = module.default(sequelize, Sequelize.DataTypes);
-  console.log('🧱 Modelo detectado:', model.name);
 
   db[model.name] = model;
 }
-console.log('Modelos finales:', Object.keys(db));
 
 
 // Asociaciones
@@ -40,6 +38,5 @@ for (const modelName of Object.keys(db)) {
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;
 
-console.log('🧩 Modelos cargados:', Object.keys(db));
 
 export default db;

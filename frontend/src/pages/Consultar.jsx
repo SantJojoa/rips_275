@@ -50,7 +50,7 @@ export default function Consultar() {
             showSuccess('Factura encontrada');
         } catch (err) {
             setError(err.message);
-            showError(err.message);
+            showError('La factura no se encontró');
         } finally {
             setLoading(false);
         }
