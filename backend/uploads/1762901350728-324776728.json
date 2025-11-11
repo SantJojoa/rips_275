@@ -1,0 +1,76 @@
+{
+  "numDocumentoIdObligado": "840000269",
+  "numFactura": "AWAS1283585",
+  "tipoNota": null,
+  "numNota": null,
+  "usuarios": [
+
+      {
+        "tipoDocumentoIdentificacion":"CC",
+        "numDocumentoIdentificacion":"1379000112",
+        "tipoUsuario":"04",
+        "fechaNacimiento":"1996-04-26",
+        "codSexo":"M",
+        "codPaisResidencia":"170",
+        "codMunicipioResidencia":"52835",
+        "codZonaTerritorialResidencia":"01",
+        "incapacidad":"NO",
+        "codPaisOrigen":"170",
+        "consecutivo":1,
+        "servicios":
+        {
+            "consultas":[
+              {
+                 "codPrestador":"520790005501",
+                 "fechaInicioAtencion":"2025-09-30 07:50",
+                 "numAutorizacion":null,
+                 "codConsulta":"I10301",
+                 "modalidadGrupoServicioTecSal":"04",
+                 "grupoServicios":"01",
+                 "codServicio":328,
+                 "finalidadTecnologiaSalud":"44",
+                 "causaMotivoAtencion":"38",
+                 "codDiagnosticoPrincipal":"Z208",
+                 "codDiagnosticoRelacionado1":null,
+                 "codDiagnosticoRelacionado2":null,
+                 "codDiagnosticoRelacionado3":null,
+                 "tipoDiagnosticoPrincipal":"02",
+                 "tipoDocumentoIdentificacion":"CC",
+                 "numDocumentoIdentificacion":"1006850779",
+                 "vrServicio":0,
+                 "conceptoRecaudo":"05",
+                 "valorPagoModerador":0,
+                 "numFEVPagoModerador":null,
+                 "consecutivo":1
+              },
+              {
+                 "codPrestador":"520790005501",
+                 "fechaInicioAtencion":"2025-09-30 07:51",
+                 "numAutorizacion":null,
+                 "codConsulta":"I10301",
+                 "modalidadGrupoServicioTecSal":"04",
+                 "grupoServicios":"01",
+                 "codServicio":328,
+                 "finalidadTecnologiaSalud":"44",
+                 "causaMotivoAtencion":"38",
+                 "codDiagnosticoPrincipal":"Z208",
+                 "codDiagnosticoRelacionado1":null,
+                 "codDiagnosticoRelacionado2":null,
+                 "codDiagnosticoRelacionado3":null,
+                 "tipoDiagnosticoPrincipal":"02",
+                 "tipoDocumentoIdentificacion":"CC",
+                 "numDocumentoIdentificacion":"1006850779",
+                 "vrServicio":0,
+                 "conceptoRecaudo":"05",
+                 "valorPagoModerador":0,
+                 "numFEVPagoModerador":null,
+                 "consecutivo":2
+              }
+            ]
+        }
+
+      }
+  ]
+
+}
+

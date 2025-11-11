@@ -1,13 +1,13 @@
 import express from 'express';
 import cors from 'cors'
 import dotenv from 'dotenv';
-import authRoutes from './routes/auth.js';
-import billsRoutes from './routes/bills.js';
+import routes from './routes/index.js';
 import db from './models/index.js';
 
 dotenv.config();
 
 const app = express();
+
 app.use(cors({
     origin: ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:3001'],
     credentials: true,
@@ -22,13 +22,10 @@ if (process.env.NODE_ENV !== 'production') {
     console.log('⚠️  Verificación SSL deshabilitada (solo desarrollo)');
 }
 
-// Rutas de autenticación (incluyen rutas de importación RIPS)
-app.use('/api/auth', authRoutes);
-app.use('/api/bills', billsRoutes);
+app.use('/api', routes);
 
 const PORT = process.env.PORT || 3000;
 
-// Sincronizar modelos y levantar servidor
 db.sequelize.sync().then(() => {
     console.log('✅ ----> Conexión exitosa a la base de datos');
     app.listen(PORT, () => {

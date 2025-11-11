@@ -43,6 +43,7 @@ export default function CreateUser() {
 
         setLoading(true);
 
+
         try {
             const res = await apiFetch('/api/auth/create-user', {
                 method: 'POST',

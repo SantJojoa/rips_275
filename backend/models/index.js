@@ -16,7 +16,6 @@ const sequelize = dbConfig.use_env_variable
 
 const db = {};
 
-// 👇 Este cambio es CLAVE (usa `pathToFileURL`)
 const modelFiles = fs
   .readdirSync(__dirname)
   .filter(file => file.endsWith('.js') && file !== 'index.js');
@@ -30,7 +29,7 @@ for (const file of modelFiles) {
 }
 
 
-// Asociaciones
+
 for (const modelName of Object.keys(db)) {
   if (db[modelName].associate) db[modelName].associate(db);
 }

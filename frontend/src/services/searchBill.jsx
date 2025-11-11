@@ -11,7 +11,7 @@ export const SearchBill = async (numFactura, userId = null) => {
             ? ""
             : `&user_id=${encodeURIComponent(String(userId || ""))}`;
 
-    const url = `/api/auth/search/factura?num_factura=${encodeURIComponent(numFactura)}${userIdParam}`;
+    const url = `/api/query/factura?num_factura=${encodeURIComponent(numFactura)}${userIdParam}`;
     const response = await apiFetch(url);
     const result = await response.json();
 
@@ -25,7 +25,7 @@ export const consultarCUV = async (codigoUnicoValidacion) => {
         throw new Error('Por favor ingrese un código CUV');
     }
 
-    const url = '/api/auth/consultar-cuv';
+    const url = '/api/query/consultar-cuv';
     const response = await apiFetch(url, {
         method: 'POST',
         body: JSON.stringify({ codigoUnicoValidacion: codigoUnicoValidacion.trim() })

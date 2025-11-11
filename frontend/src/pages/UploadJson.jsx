@@ -29,7 +29,7 @@ export default function UploadJson() {
     useEffect(() => {
         (async () => {
             try {
-                const res = await apiFetch('/api/auth/prestadores');
+                const res = await apiFetch('/api/prestadores');
                 const data = await res.json();
                 if (!res.ok) throw new Error(data?.message || 'Error al obtener los prestadores');
                 setPrestadores(data || []);
@@ -124,13 +124,14 @@ export default function UploadJson() {
                 fd.append('prestadorId', String(prestadorId));
                 if (periodoFac) fd.append('periodo_fac', String(periodoFac));
                 if (anio) fd.append('anio', String(anio));
+                //TODO : CAMBIAR LA RUTA
 
-                res = await apiFetch('/api/auth/upload-json-file', {
+                res = await apiFetch('/api/import/upload-json-file', {
                     method: 'POST',
                     body: fd,
                 });
             } else {
-                res = await apiFetch('/api/auth/upload-json', {
+                res = await apiFetch('/api/import/upload-json', {
                     method: 'POST',
                     body: JSON.stringify({
                         prestadorId: Number(prestadorId),
@@ -143,7 +144,6 @@ export default function UploadJson() {
 
             data = await res.json();
             if (!res.ok) return showError(data?.message || 'Error en la carga');
-            //TODO VER SI FUNCIONA BIEN 
 
             showSuccess(data?.message || 'Carga realizada correctamente');
             if (data?.radicado) showSuccess(prev => `${prev} - Radicado: ${data.radicado}`);

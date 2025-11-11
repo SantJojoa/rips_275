@@ -15,6 +15,7 @@ export default function Login() {
         e.preventDefault();
         setError('');
         setLoading(true);
+        //TODO : CAMBIAR LA RUTA
         try {
             const res = await apiFetch('/api/auth/login', {
                 method: 'POST',
