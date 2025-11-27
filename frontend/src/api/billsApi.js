@@ -1,8 +1,8 @@
-const API_URL = 'http://localhost:3000/api/bills'; // Ajusta el puerto si es necesario
+import { apiFetch } from '../lib/api.js';
 
 export async function fetchBills() {
     try {
-        const res = await fetch(API_URL);
+        const res = await apiFetch('/api/bills');
         if (!res.ok) throw new Error('Error al obtener facturas');
         return await res.json();
     } catch (error) {
@@ -13,7 +13,7 @@ export async function fetchBills() {
 
 export async function deleteBill(id) {
     try {
-        const res = await fetch(`${API_URL}/${id}`, {
+        const res = await apiFetch(`/api/bills/${id}`, {
             method: 'DELETE'
         });
         if (!res.ok) throw new Error('Error al eliminar factura');
@@ -22,13 +22,11 @@ export async function deleteBill(id) {
         console.error(error);
     }
 }
+
 export async function updateBill(id, data) {
     try {
-        const res = await fetch(`${API_URL}/${id}`, {
+        const res = await apiFetch(`/api/bills/${id}`, {
             method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json'
-            },
             body: JSON.stringify({
                 num_factura: data.num_factura,   // <-- coincide con backend
                 valor_factura: parseFloat(data.valor_factura)

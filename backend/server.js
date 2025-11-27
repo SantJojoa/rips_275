@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors'
 import dotenv from 'dotenv';
 import authRoutes from './routes/auth.js';
-import billsRoutes from './routes/bills.js';
+import billsRoutes from './routes/billRoutes.js';
 import db from './models/index.js';
 
 dotenv.config();
@@ -25,6 +25,7 @@ if (process.env.NODE_ENV !== 'production') {
 // Rutas de autenticación (incluyen rutas de importación RIPS)
 app.use('/api/auth', authRoutes);
 app.use('/api/bills', billsRoutes);
+
 
 const PORT = process.env.PORT || 3000;
 
