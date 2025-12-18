@@ -63,12 +63,15 @@ export default function Consultar() {
     return (
         <>
             <div className="max-w-6xl mx-auto px-3 py-5">
-
+                <div className="mb-5 text-center">
+                    <h1 className="text-4xl font-bold text-slate-900 mb-2">
+                        Consulta RIPS
+                    </h1>
+                    <p className="text-slate-600">
+                        Busque información de facturas en el sistema.
+                    </p>
+                </div>
                 <div className="bg-white border border-slate-200 rounded-2xl shadow-md p-5 mb-2">
-                    <div className="text-center mb-10">
-                        <h1 className="text-3xl font-semibold text-slate-900 tracking-tight">Consulta RIPS</h1>
-                        <p className="text-slate-500 mt-2 text-sm">Busque información de facturas en el sistema.</p>
-                    </div>
 
                     <div className="flex flex-col sm:flex-row gap-4 sm:items-end">
                         <div className="flex-1 w-full">

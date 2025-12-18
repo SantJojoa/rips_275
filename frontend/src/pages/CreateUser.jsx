@@ -82,12 +82,17 @@ export default function CreateUser() {
     };
 
     return (
-        <div className="min-h-screen p-6 flex items-center justify-center">
+        <div className="min-h-screen mt-[-50px] flex flex-col items-center justify-center">
+            <div className="mb-5 text-center">
+                <h1 className="text-4xl font-bold text-slate-900 mb-2">
+                    Crear Usuario
+                </h1>
+                <p className="text-slate-600">
+                    Registra un nuevo usuario en el sistema con sus respectivos permisos
+                </p>
+            </div>
+
             <div className="w-full max-w-2xl bg-white rounded-3xl shadow-xl border border-slate-200 p-10 transition">
-                <div className="text-center mb-8">
-                    <h1 className="text-3xl font-semibold text-slate-900 tracking-tight">Crear Usuario</h1>
-                    <p className="text-slate-500 mt-2 text-sm">Registra un nuevo usuario en el sistema</p>
-                </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
