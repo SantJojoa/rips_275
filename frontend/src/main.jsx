@@ -16,6 +16,7 @@ import NotFound from './pages/NotFound.jsx'
 import ListBills from './pages/ListBills.jsx'
 import CreateUser from './pages/CreateUser.jsx'
 import SearchCuv from './pages/SearchCuv.jsx'
+import CompareCuvXml from './pages/CompareCuvXml.jsx'
 
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -37,6 +38,7 @@ createRoot(document.getElementById('root')).render(
         <Route path="/crear-usuario" element={<AdminRoute><Layout><CreateUser /></Layout></AdminRoute>} />
         <Route path="/consultar" element={<PrivateRoute><Consultar /></PrivateRoute>} />
         <Route path="/consultar-cuv" element={<PrivateRoute><SearchCuv /></PrivateRoute>} />
+        <Route path="/comparar-cuv-xml" element={<PrivateRoute><CompareCuvXml /></PrivateRoute>} />
         <Route path="/gestionar-facturas" element={<PrivateRoute><ListBills /></PrivateRoute>} />
         <Route path="*" element={<NotFound />} />
       </Routes>

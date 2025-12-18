@@ -33,11 +33,45 @@ export const consultarCUV = async (codigoUnicoValidacion) => {
 
     const result = await response.json();
 
-    // Si la respuesta tiene ResultadosValidacion o ResultState, es una respuesta válida
-    // aunque contenga errores de validación
+
     if (!response.ok && !result.ResultadosValidacion && result.ResultState === undefined) {
         throw new Error(result.message || 'Error al consultar el CUV');
     }
 
     return result;
 };
+
+
+export const compareCuvXml = async (cuvFile, xmlFile, cuvText = '') => {
+    if ((!cuvFile && !cuvText.trim()) || !xmlFile) {
+        throw new Error('Se requieren el código CUV (archivo o texto) y el archivo XML');
+    }
+
+    const formData = new FormData();
+
+    if (cuvFile) {
+        formData.append('cuv', cuvFile);
+    }
+    if (cuvText.trim()) {
+        formData.append('cuvText', cuvText.trim());
+    }
+
+    formData.append('xml', xmlFile);
+
+    const url = '/api/auth/compare-cuv-xml';
+    const response = await apiFetch(url, {
+        method: 'POST',
+        body: formData,
+        headers: {}
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+        throw new Error(result.message || 'Error al comparar CUV y XML');
+    }
+
+    return result;
+};
+
+

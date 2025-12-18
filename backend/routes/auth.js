@@ -2,7 +2,7 @@ import express from "express"
 import { login, getProfile, createUser } from '../controllers/authController.js'
 import { authenticate, authorize } from '../middlewares/auth.js'
 import { uploadRipsJson, uploadRipsJsonFile } from '../controllers/importController.js'
-import { searchByFactura, consultarCUV } from '../controllers/queryControllers.js'
+import { searchByFactura, consultarCUV, compareCuvXml } from '../controllers/queryControllers.js'
 import db from '../models/index.js';
 import multer from 'multer';
 
@@ -37,4 +37,8 @@ router.post('/upload-json-file', authenticate, authorize, upload.single('file'),
 
 router.get('/search/factura', authenticate, searchByFactura);
 router.post('/consultar-cuv', authenticate, consultarCUV);
+router.post('/compare-cuv-xml', authenticate, upload.fields([
+    { name: 'cuv', maxCount: 1 },
+    { name: 'xml', maxCount: 1 }
+]), compareCuvXml);
 export default router;

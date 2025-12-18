@@ -23,7 +23,6 @@ export default function SearchCuv() {
         try {
             const data = await consultarCUV(cuv.trim());
 
-            // Verificar si la respuesta tiene ResultState false (error de validación)
             if (data.ResultState === false || data.EsValido === false) {
                 setResult(data);
                 if (data.ResultState === false) {
@@ -59,11 +58,31 @@ export default function SearchCuv() {
     const extractCuvFromText = (text) => {
         try {
             const json = JSON.parse(text);
-            return json.CodigoUnicoValidacion || json.codigoUnicoValidacion;
+            return json.CodigoUnicoValidacion
+                || json.codigoUnicoValidacion
+                || json['Código Unico de Validación (CUV)']
+                || json['Codigo Unico de Validacion (CUV)']
+                || json['CUV'];
         } catch {
-            const regex = /["']?CodigoUnicoValidacion["']?\s*:\s*["']([^"']+)["']/i;
-            const match = text.match(regex);
-            return match ? match[1] : null;
+            const patterns = [
+                /["']?CodigoUnicoValidacion["']?\s*:\s*["']([^"']+)["']/i,
+                /["']?Código\s+Unico\s+de\s+Validación\s*\(CUV\)["']?\s*:\s*["']([^"']+)["']/i,
+                /["']?Codigo\s+Unico\s+de\s+Validacion\s*\(CUV\)["']?\s*:\s*["']([^"']+)["']/i,
+                /["']?CUV["']?\s*:\s*["']([^"']+)["']/i,
+                /Código\s+Unico\s+de\s+Validación\s*\(CUV\)\s*:\s*([a-zA-Z0-9]+)/i,
+                /Codigo\s+Unico\s+de\s+Validacion\s*\(CUV\)\s*:\s*([a-zA-Z0-9]+)/i,
+                /CodigoUnicoValidacion\s*:\s*([a-zA-Z0-9]+)/i,
+                /CUV\s*:\s*([a-zA-Z0-9]+)/i
+            ];
+
+            for (const pattern of patterns) {
+                const match = text.match(pattern);
+                if (match && match[1]) {
+                    return match[1].trim();
+                }
+            }
+
+            return null;
         }
     };
 
@@ -175,7 +194,6 @@ export default function SearchCuv() {
                 </form>
             </div>
 
-            {/* Zona de drag & drop */}
             <div
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
@@ -220,8 +238,8 @@ export default function SearchCuv() {
 
             {result && (
                 <div className={`rounded-lg p-6 mb-6 border-2 ${(result.EsValido === true || result.ResultState === true)
-                        ? 'bg-green-50 border-green-200'
-                        : 'bg-red-50 border-red-200'
+                    ? 'bg-green-50 border-green-200'
+                    : 'bg-red-50 border-red-200'
                     }`}>
                     <div className="flex items-start gap-3 mb-6">
                         {(result.EsValido === true || result.ResultState === true) ? (
@@ -289,8 +307,8 @@ export default function SearchCuv() {
                                         </td>
                                         <td className="px-6 py-4 text-sm text-slate-900">
                                             <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${(result.EsValido === true || result.ResultState === true)
-                                                    ? 'bg-green-100 text-green-800'
-                                                    : 'bg-red-100 text-red-800'
+                                                ? 'bg-green-100 text-green-800'
+                                                : 'bg-red-100 text-red-800'
                                                 }`}>
                                                 {(result.EsValido === true || result.ResultState === true) ? '✓ Válido' : '✗ Rechazado'}
                                             </span>
