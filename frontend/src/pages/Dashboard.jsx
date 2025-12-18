@@ -122,11 +122,10 @@ export default function Dashboard() {
                 </div>
             </div>
 
-            {/* Sección: Subir Información */}
             <div className="mb-12">
                 <h2 className="text-xl font-bold text-slate-700 mb-4 flex items-center gap-2">
                     <Upload className="w-6 h-6 text-blue-600" />
-                    Subir Información
+                    {admin ? 'Subir Información' : 'Consultar Información'}
                 </h2>
                 <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                     {subirInformacion.map((card, index) => renderCard(card, index))}

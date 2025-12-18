@@ -31,7 +31,7 @@ createRoot(document.getElementById('root')).render(
     <ToastContainer />
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Login />} />
+        <Route path="/" element={getToken() ? <Navigate to="/dashboard" /> : <Navigate to="/login" />} />
         <Route path="/login" element={<Login />} />
         <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
         <Route path="/upload-json" element={<AdminRoute><Layout><UploadJson /></Layout></AdminRoute>} />
