@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { getUser, isAdmin } from '../lib/auth';
-import { Search, Upload, UserPlus, List, Database, Download, ArrowLeftRight } from "lucide-react";
+import { Search, Upload, UserPlus, List, Database, ArrowLeftRight } from "lucide-react";
 
 export default function Dashboard() {
     const navigate = useNavigate();
@@ -24,13 +24,7 @@ export default function Dashboard() {
             action: () => navigate('/comparar-cuv-xml'),
             color: "indigo",
         },
-        ...(admin ? [{
-            title: "Descargar JSON",
-            description: "Descarga archivos RIPS en formato JSON desde la plataforma del Ministerio de Salud.",
-            icon: Download,
-            action: () => navigate('/descargar-json'),
-            color: "cyan",
-        }] : []),
+
     ];
 
     const subirInformacion = [
@@ -87,6 +81,7 @@ export default function Dashboard() {
                 border border-slate-200 bg-white/80 backdrop-blur-sm 
                 p-8 shadow-sm hover:shadow-md 
                 hover:-translate-y-1.5 transition-all duration-300 ease-out cursor-pointer 
+                w-full sm:w-[calc(50%-0.75rem)] 
                 ${colorClasses[card.color]}`}
             >
                 <div className="flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 transition-colors duration-300 group-hover:bg-white/20">
@@ -117,32 +112,37 @@ export default function Dashboard() {
                     <Database className="w-6 h-6 text-purple-600" />
                     Conexión Ministerio
                 </h2>
-                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="flex flex-wrap justify-center gap-6">
                     {conexionMinisterio.map((card, index) => renderCard(card, index))}
                 </div>
             </div>
+
+            <hr className="my-8 border-slate-200" />
 
             <div className="mb-12">
                 <h2 className="text-xl font-bold text-slate-700 mb-4 flex items-center gap-2">
                     <Upload className="w-6 h-6 text-blue-600" />
                     {admin ? 'Subir Información' : 'Consultar Información'}
                 </h2>
-                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="flex flex-wrap justify-center gap-6">
                     {subirInformacion.map((card, index) => renderCard(card, index))}
                 </div>
             </div>
 
             {/* Sección: Administrar (solo admin) */}
             {admin && administrar.length > 0 && (
-                <div className="mb-12">
-                    <h2 className="text-xl font-bold text-slate-700 mb-4 flex items-center gap-2">
-                        <UserPlus className="w-6 h-6 text-amber-600" />
-                        Administrar
-                    </h2>
-                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                        {administrar.map((card, index) => renderCard(card, index))}
+                <>
+                    <hr className="my-8 border-slate-200" />
+                    <div className="mb-12">
+                        <h2 className="text-xl font-bold text-slate-700 mb-4 flex items-center gap-2">
+                            <UserPlus className="w-6 h-6 text-amber-600" />
+                            Administrar
+                        </h2>
+                        <div className="flex flex-wrap justify-center gap-6">
+                            {administrar.map((card, index) => renderCard(card, index))}
+                        </div>
                     </div>
-                </div>
+                </>
             )}
         </div>
     );

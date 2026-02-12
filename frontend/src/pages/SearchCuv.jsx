@@ -65,10 +65,17 @@ export default function SearchCuv() {
                 || json['CUV'];
         } catch {
             const patterns = [
+                // Patrones con comillas JSON
                 /["']?CodigoUnicoValidacion["']?\s*:\s*["']([^"']+)["']/i,
                 /["']?Código\s+Unico\s+de\s+Validación\s*\(CUV\)["']?\s*:\s*["']([^"']+)["']/i,
                 /["']?Codigo\s+Unico\s+de\s+Validacion\s*\(CUV\)["']?\s*:\s*["']([^"']+)["']/i,
                 /["']?CUV["']?\s*:\s*["']([^"']+)["']/i,
+                // Patrones para texto plano (sin comillas) - incluye hashes hexadecimales largos
+                /Código\s+Unico\s+de\s+Validación\s*\(CUV\)\s*:\s*([a-fA-F0-9]+)/i,
+                /Codigo\s+Unico\s+de\s+Validacion\s*\(CUV\)\s*:\s*([a-fA-F0-9]+)/i,
+                /CodigoUnicoValidacion\s*:\s*([a-fA-F0-9]+)/i,
+                /CUV\s*:\s*([a-fA-F0-9]+)/i,
+                // Patrones alternativos alfanuméricos
                 /Código\s+Unico\s+de\s+Validación\s*\(CUV\)\s*:\s*([a-zA-Z0-9]+)/i,
                 /Codigo\s+Unico\s+de\s+Validacion\s*\(CUV\)\s*:\s*([a-zA-Z0-9]+)/i,
                 /CodigoUnicoValidacion\s*:\s*([a-zA-Z0-9]+)/i,
