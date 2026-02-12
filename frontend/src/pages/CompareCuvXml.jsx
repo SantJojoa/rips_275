@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Upload, FileJson, FileCode, Loader2, AlertCircle, CheckCircle2, XCircle, ArrowLeftRight } from 'lucide-react';
-import { compareCuvXml } from '../services/searchBill';
+import { compareCuvXml } from '../services/searchBill.js';
 import { toast } from 'react-toastify';
 
 export default function CompareCuvXml() {

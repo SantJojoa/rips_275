@@ -73,7 +73,10 @@ export default function RenderTabla({ datos, tabId, titulo, visibleColsByTab, se
             cell: row => {
                 let valor = c.type === 'base' ? row[c.key] : row.data?.[c.key];
                 if (valor && typeof valor === 'string' && /^\d{4}-\d{2}-\d{2}/.test(valor)) {
-                    try { valor = new Date(valor).toLocaleString('es-ES'); } catch { }
+                    const date = new Date(valor);
+                    if (!Number.isNaN(date.getTime())) {
+                        valor = date.toLocaleString('es-ES');
+                    }
                 }
                 return <div className="text-sm text-slate-800">{valor ?? ''}</div>;
             }

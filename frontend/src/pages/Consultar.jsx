@@ -1,14 +1,13 @@
 import { useState } from "react";
 import { Search } from 'lucide-react';
 import Select from 'react-select'
-import { SearchBill } from '../services/searchBill';
+import { SearchBill } from '../services/searchBill.js';
 import { exportFacturaToExcel } from '../utils/exportToExcel';
 import RenderTabla from '../components/RenderTabla';
 import { showError, showSuccess } from '../utils/toastUtils';
 
 export default function Consultar() {
     const [numFactura, setNumFactura] = useState('');
-    const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
     const [data, setData] = useState(null);
     const [activeTab, setActiveTab] = useState('consultas');
@@ -30,7 +29,6 @@ export default function Consultar() {
     const buscarFactura = async (userId = null) => {
         try {
             setLoading(true);
-            setError(null);
 
             const result = await SearchBill(numFactura, userId);
 
@@ -48,8 +46,7 @@ export default function Consultar() {
             setSelectedUserId(userId);
             setIsFactura(true);
             showSuccess('Factura encontrada');
-        } catch (err) {
-            setError(err.message);
+        } catch {
             showError('La factura no se encontró');
         } finally {
             setLoading(false);

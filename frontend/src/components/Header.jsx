@@ -1,11 +1,10 @@
 import { useNavigate } from 'react-router-dom';
-import { getUser, isAdmin, clearToken } from '../lib/auth';
+import { getUser, clearToken } from '../lib/auth';
 import { House, LogOut } from "lucide-react";
 
 export default function Header() {
     const navigate = useNavigate();
     const user = getUser();
-    const admin = isAdmin();
 
     const logout = () => {
         clearToken();

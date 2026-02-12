@@ -4,10 +4,12 @@ import { motion } from "framer-motion";
 
 export default function NotFound() {
     const navigate = useNavigate();
+    const MotionDiv = motion.div;
+    const MotionButton = motion.button;
 
     return (
         <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-white to-slate-100 px-6 text-center">
-            <motion.div
+            <MotionDiv
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.5 }}
@@ -15,13 +17,13 @@ export default function NotFound() {
             >
                 {/* Icono animado */}
                 <div className="flex justify-center mb-6">
-                    <motion.div
+                    <MotionDiv
                         animate={{ rotate: [0, -10, 10, -10, 0] }}
                         transition={{ repeat: Infinity, duration: 2 }}
                         className="bg-green-100 p-4 rounded-full shadow-inner"
                     >
                         <AlertTriangle className="text-green-600 w-12 h-12" />
-                    </motion.div>
+                    </MotionDiv>
                 </div>
 
                 {/* Título */}
@@ -36,15 +38,15 @@ export default function NotFound() {
                 </p>
 
                 {/* Botón */}
-                <motion.button
+                <MotionButton
                     onClick={() => navigate("/dashboard")}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     className="cursor-pointer mt-8 px-6 py-3 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 transition font-semibold"
                 >
                     Ir al Dashboard
-                </motion.button>
-            </motion.div>
+                </MotionButton>
+            </MotionDiv>
 
             {/* Footer */}
             <footer className="mt-10 text-xs text-slate-400">

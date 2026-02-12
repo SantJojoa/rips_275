@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Search, Upload, FileJson, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { consultarCUV } from '../services/searchBill';
+import { consultarCUV } from '../services/searchBill.js';
 import { toast } from 'react-toastify';
 
 export default function SearchCuv() {
