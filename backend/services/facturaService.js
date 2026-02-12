@@ -46,12 +46,12 @@ export class FacturaService {
 
         if (!transaccion) {
             logger.warn('Factura no encontrada', { num_factura });
-            throw createError('Factura no encontrada', 404);
+            throw createError(404, 'Factura no encontrada');
         }
 
         if (!transaccion.Users || transaccion.Users.length === 0) {
             logger.warn('Sin usuarios asociados', { num_factura });
-            throw createError('Sin usuarios asociados', 404);
+            throw createError(404, 'Sin usuarios asociados');
         }
 
         logger.info('Transaccion encontrada:', {
@@ -148,7 +148,7 @@ export class FacturaService {
 
         if (!selectedUser) {
             logger.warn('Usuario no encontrado', { userId });
-            throw createError('Usuario no encontrado', 404);
+            throw createError(404, 'Usuario no encontrado');
         }
 
         return this.prepareCompleteResponse(transaccion, selectedUser, services);

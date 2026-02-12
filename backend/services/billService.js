@@ -1,6 +1,7 @@
 import db from '../models/index.js';
 import { createError } from '../utils/errorHandler.js';
 import logger from '../utils/logger.js';
+import { Op } from 'sequelize';
 
 const { Transaccion, Control, Prestador, sequelize } = db;
 
@@ -33,11 +34,7 @@ export class BillService {
         const transaccionWhere = {};
 
         if (filters.num_factura) {
-            transaccionWhere.num_factura = sequelize.where(
-                sequelize.fn('LOWER', sequelize.col('Transaccion.num_factura')),
-                'LIKE',
-                `%${filters.num_factura.toLowerCase()}%`
-            );
+            transaccionWhere.num_factura = { [Op.iLike]: `%${filters.num_factura}%` };
         }
 
         // Query principal
@@ -200,8 +197,8 @@ export class BillService {
                 COUNT(*) as total_facturas,
                 SUM(CAST(valor_factura AS DECIMAL)) as valor_total,
                 AVG(CAST(valor_factura AS DECIMAL)) as valor_promedio
-            FROM transacciones t
-            INNER JOIN controles c ON t.id_control = c.id
+            FROM transaccion t
+            INNER JOIN control c ON t.id_control = c.id
             WHERE c.status = 'ACT'
         `);
 

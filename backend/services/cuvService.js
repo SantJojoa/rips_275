@@ -19,7 +19,7 @@ export class CuvService {
 
         return (
             errorResponse.data.ResultadosValidacion ||
-            error.Response.data.ResultState !== undefined
+            errorResponse.data.ResultState !== undefined
         );
     }
 

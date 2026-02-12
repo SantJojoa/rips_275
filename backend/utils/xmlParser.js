@@ -46,7 +46,7 @@ export class XmlParser {
             return value
 
         } catch (error) {
-            if (error.statusCode) throw error
+            if (error.status) throw error
             throw createError(400, `Error al procesar el archivo XML: ${error.message}`)
         }
     }

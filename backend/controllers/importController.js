@@ -14,7 +14,6 @@ export const uploadRipsJsonFile = async (req, res) => {
 
         req.body = {
             ...req.body,
-            ...req.body,
             data: dataObj,
             route: req.file.path
         };
