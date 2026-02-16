@@ -1,0 +1,43 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: fevrips_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: sistemas
+      POSTGRES_PASSWORD: FEVRIPSidsn*
+      POSTGRES_DB: rips_2275
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build: ./backend
+    container_name: fevrips_backend
+    restart: always
+    depends_on:
+      - postgres
+    environment:
+      DB_HOST: postgres
+      DB_USERNAME: sistemas
+      DB_PASSWORD: FEVRIPSidsn*
+      DB_DATABASE: rips_2275
+      DB_PORT: 5432
+      JWT_SECRET: tokenpassword*@
+      CUV_API_URL: https://172.16.4.7:9443
+      NODE_TLS_REJECT_UNAUTHORIZED: "0"
+    ports:
+      - "3000:3000"
+
+  frontend:
+    build: ./frontend
+    container_name: fevrips_frontend
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - "5173:5173"
+
+volumes:
+  postgres_data:
