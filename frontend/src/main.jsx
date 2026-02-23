@@ -5,7 +5,7 @@ import './index.css'
 
 
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { getToken } from './lib/auth'
+import { getToken, isTokenExpired, clearToken } from './lib/auth'
 import Login from './pages/Login.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import UploadJson from './pages/UploadJson.jsx'
@@ -22,15 +22,30 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 
-const withPrivateLayout = (children) =>
-  getToken() ? <Layout>{children}</Layout> : <Navigate to="/login" />;
+const withPrivateLayout = (children) => {
+  const token = getToken();
+  if (token && isTokenExpired(token)) {
+    clearToken();
+    return <Navigate to="/login" />;
+  }
+  return token ? <Layout>{children}</Layout> : <Navigate to="/login" />;
+};
+
+const RootRedirect = () => {
+  const token = getToken();
+  if (token && isTokenExpired(token)) {
+    clearToken();
+    return <Navigate to="/login" />;
+  }
+  return token ? <Navigate to="/dashboard" /> : <Navigate to="/login" />;
+};
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <ToastContainer />
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={getToken() ? <Navigate to="/dashboard" /> : <Navigate to="/login" />} />
+        <Route path="/" element={<RootRedirect />} />
         <Route path="/login" element={<Login />} />
         <Route path="/dashboard" element={withPrivateLayout(<Dashboard />)} />
         <Route path="/upload-json" element={<AdminRoute><Layout><UploadJson /></Layout></AdminRoute>} />

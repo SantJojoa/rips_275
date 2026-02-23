@@ -23,9 +23,23 @@ function parseJwt(token) {
     }
 }
 
+export function isTokenExpired(token) {
+    const payload = parseJwt(token);
+    if (!payload || !payload.exp) return true;
+
+    // exp is in seconds, Date.now() is in ms
+    return (payload.exp * 1000) < Date.now();
+}
+
 export function getUser() {
     const token = getToken();
     if (!token) return null;
+
+    if (isTokenExpired(token)) {
+        clearToken();
+        return null;
+    }
+
     const payload = parseJwt(token);
     if (!payload) return null;
     const { id, username, role } = payload || {};

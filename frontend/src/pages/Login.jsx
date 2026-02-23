@@ -26,7 +26,7 @@ export default function Login() {
                 return;
             }
             setToken(data.token);
-            navigate('/dashboard');
+            window.location.replace('/dashboard');
         } catch (err) {
             setError(err.message || 'Error al iniciar sesión');
         } finally {
