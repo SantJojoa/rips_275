@@ -42,6 +42,30 @@ export const consultarCUV = async (codigoUnicoValidacion) => {
 };
 
 
+export const compareCuvXmlBatch = async (cuvFiles, xmlFiles) => {
+    if (!cuvFiles.length || !xmlFiles.length) {
+        throw new Error('Se requieren archivos CUV y XML');
+    }
+
+    const formData = new FormData();
+    for (const f of cuvFiles) formData.append('cuv', f);
+    for (const f of xmlFiles) formData.append('xml', f);
+
+    const response = await apiFetch('/api/auth/compare-cuv-xml-batch', {
+        method: 'POST',
+        body: formData,
+        headers: {}
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+        throw new Error(result.message || 'Error al comparar archivos en lote');
+    }
+
+    return result;
+};
+
 export const compareCuvXml = async (cuvFile, xmlFile, cuvText = '') => {
     if ((!cuvFile && !cuvText.trim()) || !xmlFile) {
         throw new Error('Se requieren el código CUV (archivo o texto) y el archivo XML');
