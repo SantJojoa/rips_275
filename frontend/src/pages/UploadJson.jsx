@@ -153,17 +153,17 @@ export default function UploadJson() {
     };
 
     return (
-        <div className="min-h-screen  p-6 flex items-center justify-center flex-col">
-            <div className="mb-5 text-center">
-                <h1 className="text-4xl font-bold text-slate-900 mb-2">
+        <div className="py-6">
+            <div className="mb-6">
+                <h1 className="text-3xl font-bold text-slate-900 mb-1">
                     Subir archivo JSON
                 </h1>
-                <p className="text-slate-600">
+                <p className="text-slate-500">
                     Sube un archivo JSON para cargar la información
                 </p>
             </div>
 
-            <div className="w-full max-w-3xl bg-white rounded-3xl shadow-xl border border-slate-200 p-10 transition">
+            <div className="bg-white rounded-3xl shadow-xl border border-slate-200 p-10 transition">
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div>

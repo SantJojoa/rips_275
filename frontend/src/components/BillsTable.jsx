@@ -281,7 +281,7 @@ export default function BillsTable() {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center min-h-screen">
+            <div className="flex items-center justify-center py-16">
                 <div className="text-center">
                     <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
                     <p className="text-slate-600">Cargando facturas...</p>
@@ -291,101 +291,93 @@ export default function BillsTable() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
-            <div className="max-w-7xl mx-auto">
-                {/* Header */}
-                <div className="mb-8">
-                    <h1 className="text-4xl font-bold text-slate-900 mb-2">
-                        Gestión de Facturas
-                    </h1>
-                    <p className="text-slate-600">
-                        Administra y controla todas las facturas del sistema
-                    </p>
-                </div>
+        <div className="py-6">
+            <div className="mb-8">
+                <h1 className="text-3xl font-bold text-slate-900 mb-1">
+                    Gestión de Facturas
+                </h1>
+                <p className="text-slate-500">
+                    Administra y controla todas las facturas del sistema
+                </p>
+            </div>
 
-                {/* Error Alert */}
-                {error && (
-                    <div className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-lg shadow-sm">
-                        <div className="flex items-center">
-                            <AlertCircle className="text-red-500 mr-3" size={20} />
-                            <div>
-                                <p className="text-red-800 font-semibold">Error</p>
-                                <p className="text-red-700 text-sm">{error}</p>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Stats Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    <div className="bg-white rounded-xl shadow-md p-6 border border-slate-200">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-slate-600 text-sm font-medium">Total Facturas</p>
-                                <p className="text-3xl font-bold text-slate-900 mt-1">{bills.length}</p>
-                            </div>
-                            <div className="bg-blue-100 rounded-full p-3">
-                                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                </svg>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="bg-white rounded-xl shadow-md p-6 border border-slate-200">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-slate-600 text-sm font-medium">Valor Total</p>
-                                <p className="text-3xl font-bold text-emerald-600 mt-1">
-                                    ${bills.reduce((sum, bill) => sum + (Number(bill.valor_factura) || 0), 0).toLocaleString('es-CO')}
-                                </p>
-                            </div>
-                            <div className="bg-emerald-100 rounded-full p-3">
-                                <svg className="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="bg-white rounded-xl shadow-md p-6 border border-slate-200">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-slate-600 text-sm font-medium">Promedio</p>
-                                <p className="text-3xl font-bold text-amber-600 mt-1">
-                                    ${bills.length > 0 ? Math.round(bills.reduce((sum, bill) => sum + (Number(bill.valor_factura) || 0), 0) / bills.length).toLocaleString('es-CO') : 0}
-                                </p>
-                            </div>
-                            <div className="bg-amber-100 rounded-full p-3">
-                                <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                                </svg>
-                            </div>
+            {error && (
+                <div className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-lg shadow-sm">
+                    <div className="flex items-center">
+                        <AlertCircle className="text-red-500 mr-3" size={20} />
+                        <div>
+                            <p className="text-red-800 font-semibold">Error</p>
+                            <p className="text-red-700 text-sm">{error}</p>
                         </div>
                     </div>
                 </div>
+            )}
 
-                {/* Table Card */}
-                <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200">
-                    <DataTable
-                        columns={columns}
-                        data={bills}
-                        pagination
-                        paginationComponentOptions={paginationComponentOptions}
-                        highlightOnHover
-                        pointerOnHover
-                        customStyles={customStyles}
-                        noDataComponent={
-                            <div className="py-16 text-center">
-                                <svg className="mx-auto h-12 w-12 text-slate-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                </svg>
-                                <p className="text-slate-600 text-lg font-medium mb-1">No hay facturas registradas</p>
-                                <p className="text-slate-500 text-sm">Las facturas aparecerán aquí cuando se registren</p>
-                            </div>
-                        }
-                    />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div className="bg-white rounded-xl shadow-md p-6 border border-slate-200">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-slate-600 text-sm font-medium">Total Facturas</p>
+                            <p className="text-3xl font-bold text-slate-900 mt-1">{bills.length}</p>
+                        </div>
+                        <div className="bg-blue-100 rounded-full p-3">
+                            <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                        </div>
+                    </div>
                 </div>
+                <div className="bg-white rounded-xl shadow-md p-6 border border-slate-200">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-slate-600 text-sm font-medium">Valor Total</p>
+                            <p className="text-3xl font-bold text-emerald-600 mt-1">
+                                ${bills.reduce((sum, bill) => sum + (Number(bill.valor_factura) || 0), 0).toLocaleString('es-CO')}
+                            </p>
+                        </div>
+                        <div className="bg-emerald-100 rounded-full p-3">
+                            <svg className="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                <div className="bg-white rounded-xl shadow-md p-6 border border-slate-200">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-slate-600 text-sm font-medium">Promedio</p>
+                            <p className="text-3xl font-bold text-amber-600 mt-1">
+                                ${bills.length > 0 ? Math.round(bills.reduce((sum, bill) => sum + (Number(bill.valor_factura) || 0), 0) / bills.length).toLocaleString('es-CO') : 0}
+                            </p>
+                        </div>
+                        <div className="bg-amber-100 rounded-full p-3">
+                            <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200">
+                <DataTable
+                    columns={columns}
+                    data={bills}
+                    pagination
+                    paginationComponentOptions={paginationComponentOptions}
+                    highlightOnHover
+                    pointerOnHover
+                    customStyles={customStyles}
+                    noDataComponent={
+                        <div className="py-16 text-center">
+                            <svg className="mx-auto h-12 w-12 text-slate-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <p className="text-slate-600 text-lg font-medium mb-1">No hay facturas registradas</p>
+                            <p className="text-slate-500 text-sm">Las facturas aparecerán aquí cuando se registren</p>
+                        </div>
+                    }
+                />
             </div>
         </div>
     );

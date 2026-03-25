@@ -21,13 +21,13 @@ export default function Header() {
                 />
 
                 <div className="leading-tight">
-                    <h1 className="text-lg font-semibold text-slate-800 flex items-center gap-1">
+                    <h1 className="text-2xl font-semibold text-slate-800 flex items-center gap-1">
                         Panel de Control
-                        <span className="ml-1 text-green-var bg-green-50 px-2 py-0.5 rounded-md font-medium text-sm">
+                        <span className="ml-1 text-green-var bg-green-50 px-2 py-0.5 rounded-md font-medium text-lg">
                             Sistema FEV-RIPS
                         </span>
                     </h1>
-                    <span className="block text-[11px] text-slate-500 font-medium">
+                    <span className="block text-[13px] text-slate-500 font-medium">
                         Instituto Departamental de Salud de Nariño
                     </span>
                 </div>
@@ -35,7 +35,7 @@ export default function Header() {
 
             {/* Datos del usuario y botones */}
             <div className="flex items-center gap-4">
-                <span className="flex items-center gap-2 text-sm text-slate-700 bg-slate-50 px-3 py-1.5 rounded-full border border-slate-200">
+                <span className="flex items-center gap-2 text-base text-slate-700 bg-slate-50 px-3 py-1.5 rounded-full border border-slate-200">
                     <img src="user-icon.svg" alt="" className="w-4 h-4 opacity-70" />
                     <span className="inline-block w-2 h-2 bg-green-var rounded-full" />
                     <span className="font-medium">

@@ -156,19 +156,19 @@ export default function SearchCuv() {
     };
 
     return (
-        <div className="px-6 py-10 max-w-6xl mx-auto">
-            <div className="mb-8">
-                <h1 className="text-3xl font-bold text-slate-800 mb-2">Consultar CUV</h1>
-                <p className="text-slate-600">Ingresa el código CUV o arrastra un archivo JSON</p>
+        <div className="py-6">
+            <div className="mb-6">
+                <h1 className="text-3xl font-bold text-slate-800 mb-1">Consultar CUV</h1>
+                <p className="text-slate-500">Ingresa el código CUV o arrastra un archivo JSON</p>
             </div>
 
-            {/* Formulario de búsqueda */}
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-6">
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                        <label htmlFor="cuv" className="block text-sm font-medium text-slate-700 mb-2">
-                            Código CUV
-                        </label>
+            <div className="grid md:grid-cols-2 gap-5 mb-6">
+                {/* Formulario de búsqueda */}
+                <div className="bg-white rounded-2xl border border-slate-200 p-6 flex flex-col justify-center">
+                    <label htmlFor="cuv" className="block text-base font-semibold text-slate-700 mb-3">
+                        Código CUV
+                    </label>
+                    <form onSubmit={handleSubmit}>
                         <div className="flex gap-3">
                             <input
                                 type="text"
@@ -176,59 +176,42 @@ export default function SearchCuv() {
                                 value={codigoCuv}
                                 onChange={(e) => setCodigoCuv(e.target.value)}
                                 placeholder="Ingresa el código CUV"
-                                className="flex-1 px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                className="flex-1 px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-base"
                                 disabled={loading}
                             />
                             <button
                                 type="submit"
                                 disabled={loading || !codigoCuv.trim()}
-                                className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:bg-slate-300 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                                className="px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 disabled:bg-slate-300 disabled:cursor-not-allowed transition-colors flex items-center gap-2 text-base font-semibold"
                             >
                                 {loading ? (
-                                    <>
-                                        <Loader2 className="w-5 h-5 animate-spin" />
-                                        Consultando...
-                                    </>
+                                    <><Loader2 className="w-5 h-5 animate-spin" /> Consultando...</>
                                 ) : (
-                                    <>
-                                        <Search className="w-5 h-5" />
-                                        Buscar
-                                    </>
+                                    <><Search className="w-5 h-5" /> Buscar</>
                                 )}
                             </button>
                         </div>
-                    </div>
-                </form>
-            </div>
+                    </form>
+                </div>
 
-            <div
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-                className={`bg-white rounded-2xl shadow-sm border-2 border-dashed p-12 mb-6 transition-all ${isDragging
-                    ? 'border-purple-500 bg-purple-50'
-                    : 'border-slate-300 hover:border-purple-400'
-                    }`}
-            >
-                <div className="flex flex-col items-center justify-center text-center">
-                    <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mb-4">
-                        <FileJson className="w-8 h-8 text-purple-600" />
+                {/* Drop zone */}
+                <div
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    className={`bg-white rounded-2xl border-2 border-dashed p-6 transition-all flex items-center gap-5 ${isDragging ? 'border-green-500 bg-green-50' : 'border-slate-200 hover:border-green-400'}`}
+                >
+                    <div className="w-14 h-14 bg-green-100 rounded-2xl flex items-center justify-center flex-shrink-0">
+                        <FileJson className="w-7 h-7 text-green-600" />
                     </div>
-                    <h3 className="text-lg font-semibold text-slate-800 mb-2">
-                        Arrastra un archivo JSON o TXT aquí
-                    </h3>
-                    <p className="text-slate-600 mb-4">
-                        El archivo debe contener la clave "CodigoUnicoValidacion"
-                    </p>
-                    <label className="px-6 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 cursor-pointer transition-colors flex items-center gap-2">
+                    <div className="flex-1 min-w-0">
+                        <p className="text-base font-semibold text-slate-700">Arrastra un archivo JSON o TXT</p>
+                        <p className="text-sm text-slate-400">Debe contener la clave "CodigoUnicoValidacion"</p>
+                    </div>
+                    <label className="px-4 py-2.5 bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200 cursor-pointer transition-colors flex items-center gap-2 text-base font-medium flex-shrink-0">
                         <Upload className="w-5 h-5" />
-                        Seleccionar archivo
-                        <input
-                            type="file"
-                            accept=".json,.txt"
-                            onChange={handleFileInput}
-                            className="hidden"
-                        />
+                        Seleccionar
+                        <input type="file" accept=".json,.txt" onChange={handleFileInput} className="hidden" />
                     </label>
                 </div>
             </div>

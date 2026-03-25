@@ -15,14 +15,14 @@ export default function Dashboard() {
             description: "Consulta CUV en la base de datos del Ministerio de Salud.",
             icon: Database,
             action: () => navigate('/consultar-cuv'),
-            color: "purple",
+            color: "green",
         },
         {
             title: "Comparar CUV y XML",
             description: "Compara el Total Valor Servicios del CUV con el PayableAmount del XML.",
             icon: ArrowLeftRight,
             action: () => navigate('/comparar-cuv-xml'),
-            color: "indigo",
+            color: "teal",
         },
 
     ];
@@ -66,9 +66,8 @@ export default function Dashboard() {
         green: "hover:bg-green-500 hover:border-green-500 hover:text-white",
         amber: "hover:bg-amber-500 hover:border-amber-500 hover:text-white",
         red: "hover:bg-red-500 hover:border-red-500 hover:text-white",
-        purple: "hover:bg-purple-500 hover:border-purple-500 hover:text-white",
         cyan: "hover:bg-cyan-500 hover:border-cyan-500 hover:text-white",
-        indigo: "hover:bg-indigo-500 hover:border-indigo-500 hover:text-white",
+        teal: "hover:bg-teal-500 hover:border-teal-500 hover:text-white",
     };
 
     const renderCard = (card, index) => {
@@ -81,7 +80,7 @@ export default function Dashboard() {
                 border border-slate-200 bg-white/80 backdrop-blur-sm 
                 p-8 shadow-sm hover:shadow-md 
                 hover:-translate-y-1.5 transition-all duration-300 ease-out cursor-pointer 
-                w-full sm:w-[calc(50%-0.75rem)] 
+                w-full
                 ${colorClasses[card.color]}`}
             >
                 <div className="flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 transition-colors duration-300 group-hover:bg-white/20">
@@ -101,49 +100,49 @@ export default function Dashboard() {
     };
 
     return (
-        <div className="px-6 py-10 max-w-7xl mx-auto">
-            <h1 className="text-2xl font-bold text-slate-800 mb-8 text-center">
+        <div className="py-6">
+            <h1 className="text-2xl font-bold text-slate-800 mb-8">
                 Bienvenido, <span className="text-blue-var">{displayName}</span>
             </h1>
 
-            {/* Sección: Conexión Ministerio */}
-            <div className="mb-12">
-                <h2 className="text-xl font-bold text-slate-700 mb-4 flex items-center gap-2">
-                    <Database className="w-6 h-6 text-purple-600" />
-                    Conexión Ministerio
-                </h2>
-                <div className="flex flex-wrap justify-center gap-6">
-                    {conexionMinisterio.map((card, index) => renderCard(card, index))}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Módulo 1: Conexión Ministerio */}
+                <div className="bg-white/50 rounded-2xl border border-slate-200 p-6">
+                    <h2 className="text-xl font-bold text-slate-700 mb-5 flex items-center gap-2">
+                        <Database className="w-6 h-6 text-green-600" />
+                        Conexión Ministerio
+                    </h2>
+                    <div className="grid grid-cols-2 gap-4">
+                        {conexionMinisterio.map((card, index) => renderCard(card, index))}
+                    </div>
                 </div>
-            </div>
 
-            <hr className="my-8 border-slate-200" />
-
-            <div className="mb-12">
-                <h2 className="text-xl font-bold text-slate-700 mb-4 flex items-center gap-2">
-                    <Upload className="w-6 h-6 text-blue-600" />
-                    {admin ? 'Subir Información' : 'Consultar Información'}
-                </h2>
-                <div className="flex flex-wrap justify-center gap-6">
-                    {subirInformacion.map((card, index) => renderCard(card, index))}
+                {/* Módulo 2: Subir / Consultar Información */}
+                <div className="bg-white/50 rounded-2xl border border-slate-200 p-6">
+                    <h2 className="text-xl font-bold text-slate-700 mb-5 flex items-center gap-2">
+                        <Upload className="w-6 h-6 text-blue-600" />
+                        {admin ? 'Subir Información' : 'Consultar Información'}
+                    </h2>
+                    <div className="grid grid-cols-2 gap-4">
+                        {subirInformacion.map((card, index) => renderCard(card, index))}
+                    </div>
                 </div>
-            </div>
 
-            {/* Sección: Administrar (solo admin) */}
-            {admin && administrar.length > 0 && (
-                <>
-                    <hr className="my-8 border-slate-200" />
-                    <div className="mb-12">
-                        <h2 className="text-xl font-bold text-slate-700 mb-4 flex items-center gap-2">
-                            <UserPlus className="w-6 h-6 text-amber-600" />
-                            Administrar
-                        </h2>
-                        <div className="flex flex-wrap justify-center gap-6">
-                            {administrar.map((card, index) => renderCard(card, index))}
+                {/* Módulo 3: Administrar — centrado abajo, span 2 cols */}
+                {admin && administrar.length > 0 && (
+                    <div className="md:col-span-2 flex justify-center">
+                        <div className="w-full md:w-1/2 bg-white/50 rounded-2xl border border-slate-200 p-6">
+                            <h2 className="text-xl font-bold text-slate-700 mb-5 flex items-center gap-2">
+                                <UserPlus className="w-6 h-6 text-amber-600" />
+                                Administrar
+                            </h2>
+                            <div className="grid grid-cols-2 gap-4">
+                                {administrar.map((card, index) => renderCard(card, index))}
+                            </div>
                         </div>
                     </div>
-                </>
-            )}
+                )}
+            </div>
         </div>
     );
 }

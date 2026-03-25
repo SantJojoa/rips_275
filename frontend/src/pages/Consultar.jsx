@@ -59,12 +59,12 @@ export default function Consultar() {
 
     return (
         <>
-            <div className="max-w-6xl mx-auto px-3 py-5">
-                <div className="mb-5 text-center">
-                    <h1 className="text-4xl font-bold text-slate-900 mb-2">
+            <div className="py-4">
+                <div className="mb-5">
+                    <h1 className="text-3xl font-bold text-slate-900 mb-1">
                         Consulta RIPS
                     </h1>
-                    <p className="text-slate-600">
+                    <p className="text-slate-500">
                         Busque información de facturas en el sistema.
                     </p>
                 </div>
