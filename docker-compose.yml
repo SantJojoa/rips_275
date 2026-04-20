@@ -4,14 +4,18 @@ services:
     container_name: fevrips_postgres
     restart: always
     environment:
-      POSTGRES_USER: sistemas
-      POSTGRES_PASSWORD: FEVRIPSidsn*
-      POSTGRES_DB: rips_2275
-    ports:
-      - "5432:5432"
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_DATABASE}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./backup.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./backup.sql:/docker-entrypoint-initdb.d/01_backup.sql
+      - ./seed.sql:/docker-entrypoint-initdb.d/02_seed.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_DATABASE}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   backend:
     build:
@@ -21,29 +25,34 @@ services:
     container_name: fevrips_backend
     restart: always
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     environment:
       DB_HOST: postgres
-      DB_USERNAME: sistemas
-      DB_PASSWORD: FEVRIPSidsn*
-      DB_DATABASE: rips_2275
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_DATABASE: ${DB_DATABASE}
       DB_PORT: 5432
-      JWT_SECRET: tokenpassword*@
-      CUV_API_URL: https://172.16.4.7:9443
+      DB_DIALECT: postgres
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-8h}
+      CUV_API_URL: ${CUV_API_URL}
+      NODE_ENV: production
       NODE_TLS_REJECT_UNAUTHORIZED: "0"
-    ports:
-      - "3000:3000"
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ""
     image: rips_275-frontend:latest
     container_name: fevrips_frontend
     restart: always
     depends_on:
       - backend
     ports:
-      - "5173:5173"
+      - "80:80"
+
 volumes:
   postgres_data:

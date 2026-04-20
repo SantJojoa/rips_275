@@ -1,27 +1,14 @@
-# ---------- STAGE 1: build ----------
-FROM node:20-alpine AS builder
-
-WORKDIR /app
-
-COPY package*.json ./
-RUN npm install
-
-COPY . .
-
-# Si usas TypeScript:
-# RUN npm run build
-
-# ---------- STAGE 2: production ----------
 FROM node:20-alpine
 
 WORKDIR /app
 
-COPY package*.json ./
-RUN npm install --omit=dev
+RUN npm install -g pnpm
 
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile --prod
 
-COPY --from=builder /app .
+COPY . .
 
 EXPOSE 3000
 
-CMD ["npm", "start"]
+CMD ["node", "server.js"]
