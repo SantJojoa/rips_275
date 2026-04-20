@@ -32,7 +32,7 @@ export const authenticate = (req, res, next) => {
     }
 };
 
-export const wauthorize = (req, res, next) => {
+export const authorize = (req, res, next) => {
     try {
         if (!req.user) {
             return res.status(401).json({ message: 'Usuario no autenticado' });
