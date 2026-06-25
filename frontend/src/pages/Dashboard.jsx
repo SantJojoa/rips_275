@@ -2,6 +2,73 @@ import { useNavigate } from 'react-router-dom';
 import { getUser, isAdmin } from '../lib/auth';
 import { Search, Upload, UserPlus, List, Database, ArrowLeftRight } from "lucide-react";
 
+const MODULE_ICONS = {
+    Database: { bg: '#EDF3EC', color: '#346538' },
+    ArrowLeftRight: { bg: '#E1F3FE', color: '#1F6C9F' },
+    Search: { bg: '#E1F3FE', color: '#1F6C9F' },
+    Upload: { bg: '#EDF3EC', color: '#346538' },
+    List: { bg: '#FDEBEC', color: '#9F2F2D' },
+    UserPlus: { bg: '#FBF3DB', color: '#956400' },
+};
+
+function ModuleCard({ title, description, icon: Icon, action, iconName }) {
+    const palette = MODULE_ICONS[iconName] || { bg: '#F7F6F3', color: '#787774' };
+
+    return (
+        <button
+            onClick={action}
+            style={{
+                border: '1px solid #EAEAEA',
+                borderRadius: '8px',
+                backgroundColor: '#ffffff',
+                transition: 'box-shadow 200ms, transform 150ms',
+            }}
+            onMouseEnter={e => {
+                e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.06)';
+                e.currentTarget.style.transform = 'translateY(-1px)';
+            }}
+            onMouseLeave={e => {
+                e.currentTarget.style.boxShadow = 'none';
+                e.currentTarget.style.transform = 'translateY(0)';
+            }}
+            onMouseDown={e => { e.currentTarget.style.transform = 'scale(0.98)'; }}
+            onMouseUp={e => { e.currentTarget.style.transform = 'translateY(-1px)'; }}
+            className="group text-left flex flex-col gap-3 p-5 w-full cursor-pointer"
+        >
+            <div
+                style={{
+                    width: '36px', height: '36px',
+                    borderRadius: '8px',
+                    backgroundColor: palette.bg,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}
+            >
+                <Icon style={{ color: palette.color }} className="w-4 h-4" strokeWidth={1.5} />
+            </div>
+            <div>
+                <h3 className="text-sm font-semibold text-[#111111]">{title}</h3>
+                <p className="mt-0.5 text-xs text-[#787774] leading-relaxed">{description}</p>
+            </div>
+        </button>
+    );
+}
+
+function Section({ title, icon: Icon, iconName, children }) {
+    const palette = MODULE_ICONS[iconName] || { color: '#787774' };
+    return (
+        <div style={{ border: '1px solid #EAEAEA', borderRadius: '8px', backgroundColor: '#F9F9F8' }}
+            className="p-5">
+            <div className="flex items-center gap-2 mb-4">
+                <Icon style={{ color: palette.color }} className="w-4 h-4" strokeWidth={1.5} />
+                <h2 className="text-sm font-semibold text-[#111111]">{title}</h2>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {children}
+            </div>
+        </div>
+    );
+}
+
 export default function Dashboard() {
     const navigate = useNavigate();
     const user = getUser();
@@ -9,137 +76,76 @@ export default function Dashboard() {
 
     const displayName = user?.nombres?.trim() ? user.nombres : user?.username;
 
-    const conexionMinisterio = [
-        {
-            title: "Consultar CUV",
-            description: "Consulta CUV en la base de datos del Ministerio de Salud.",
-            icon: Database,
-            action: () => navigate('/consultar-cuv'),
-            color: "green",
-        },
-        {
-            title: "Comparar CUV y XML",
-            description: "Compara el Total Valor Servicios del CUV con el PayableAmount del XML.",
-            icon: ArrowLeftRight,
-            action: () => navigate('/comparar-cuv-xml'),
-            color: "teal",
-        },
-
-    ];
-
-    const subirInformacion = [
-        {
-            title: "Consultar registros",
-            description: "Busca y revisa registros existentes con facilidad.",
-            icon: Search,
-            action: () => navigate('/consultar'),
-            color: "blue",
-        },
-        ...(admin ? [{
-            title: "Subir JSON",
-            description: "Carga archivos RIPS en formato JSON de manera rápida.",
-            icon: Upload,
-            action: () => navigate('/upload-json'),
-            color: "green",
-        }] : []),
-    ];
-
-    const administrar = admin ? [
-        {
-            title: "Gestionar facturas",
-            description: "Listar y gestionar facturas.",
-            icon: List,
-            action: () => navigate('/gestionar-facturas'),
-            color: "red",
-        },
-        {
-            title: "Crear Usuario",
-            description: "Crea nuevos usuarios para gestionar el sistema.",
-            icon: UserPlus,
-            action: () => navigate('/crear-usuario'),
-            color: "amber",
-        },
-    ] : [];
-
-    const colorClasses = {
-        blue: "hover:bg-blue-500 hover:border-blue-500 hover:text-white",
-        green: "hover:bg-green-500 hover:border-green-500 hover:text-white",
-        amber: "hover:bg-amber-500 hover:border-amber-500 hover:text-white",
-        red: "hover:bg-red-500 hover:border-red-500 hover:text-white",
-        cyan: "hover:bg-cyan-500 hover:border-cyan-500 hover:text-white",
-        teal: "hover:bg-teal-500 hover:border-teal-500 hover:text-white",
-    };
-
-    const renderCard = (card, index) => {
-        const Icon = card.icon;
-        return (
-            <button
-                key={index}
-                onClick={card.action}
-                className={`group flex flex-col items-center justify-center gap-4 rounded-2xl 
-                border border-slate-200 bg-white/80 backdrop-blur-sm 
-                p-8 shadow-sm hover:shadow-md 
-                hover:-translate-y-1.5 transition-all duration-300 ease-out cursor-pointer 
-                w-full
-                ${colorClasses[card.color]}`}
-            >
-                <div className="flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 transition-colors duration-300 group-hover:bg-white/20">
-                    <Icon
-                        className={`w-9 h-9 text-${card.color}-600 transition-colors duration-300 group-hover:text-white`}
-                        strokeWidth={2}
-                    />
-                </div>
-                <h2 className="text-lg font-semibold text-slate-800 group-hover:text-white transition-colors text-center">
-                    {card.title}
-                </h2>
-                <p className="mt-1 text-sm text-slate-500 text-center group-hover:text-white/80 transition-colors">
-                    {card.description}
-                </p>
-            </button>
-        );
-    };
-
     return (
-        <div className="py-6">
-            <h1 className="text-2xl font-bold text-slate-800 mb-8">
-                Bienvenido, <span className="text-blue-var">{displayName}</span>
-            </h1>
+        <div className="fade-up fade-up-1">
+            <div className="mb-8">
+                <h1 className="text-xl font-semibold text-[#111111] tracking-tight">
+                    Bienvenido, <span style={{ color: '#462882' }}>{displayName}</span>
+                </h1>
+                <p className="mt-1 text-sm text-[#787774]">
+                    Panel de control del Sistema FEV-RIPS
+                </p>
+            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {/* Módulo 1: Conexión Ministerio */}
-                <div className="bg-white/50 rounded-2xl border border-slate-200 p-6">
-                    <h2 className="text-xl font-bold text-slate-700 mb-5 flex items-center gap-2">
-                        <Database className="w-6 h-6 text-green-600" />
-                        Conexión Ministerio
-                    </h2>
-                    <div className="grid grid-cols-2 gap-4">
-                        {conexionMinisterio.map((card, index) => renderCard(card, index))}
-                    </div>
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Section title="Conexion Ministerio" icon={Database} iconName="Database">
+                    <ModuleCard
+                        title="Consultar CUV"
+                        description="Consulta el CUV en la base de datos del Ministerio de Salud."
+                        icon={Database}
+                        iconName="Database"
+                        action={() => navigate('/consultar-cuv')}
+                    />
+                    <ModuleCard
+                        title="Comparar CUV y XML"
+                        description="Compara el Total Valor Servicios del CUV con el PayableAmount del XML."
+                        icon={ArrowLeftRight}
+                        iconName="ArrowLeftRight"
+                        action={() => navigate('/comparar-cuv-xml')}
+                    />
+                </Section>
 
-                {/* Módulo 2: Subir / Consultar Información */}
-                <div className="bg-white/50 rounded-2xl border border-slate-200 p-6">
-                    <h2 className="text-xl font-bold text-slate-700 mb-5 flex items-center gap-2">
-                        <Upload className="w-6 h-6 text-blue-600" />
-                        {admin ? 'Subir Información' : 'Consultar Información'}
-                    </h2>
-                    <div className="grid grid-cols-2 gap-4">
-                        {subirInformacion.map((card, index) => renderCard(card, index))}
-                    </div>
-                </div>
+                <Section
+                    title={admin ? 'Subir Informacion' : 'Consultar Informacion'}
+                    icon={admin ? Upload : Search}
+                    iconName={admin ? 'Upload' : 'Search'}
+                >
+                    <ModuleCard
+                        title="Consultar registros"
+                        description="Busca y revisa registros existentes."
+                        icon={Search}
+                        iconName="Search"
+                        action={() => navigate('/consultar')}
+                    />
+                    {admin && (
+                        <ModuleCard
+                            title="Subir JSON"
+                            description="Carga archivos RIPS en formato JSON."
+                            icon={Upload}
+                            iconName="Upload"
+                            action={() => navigate('/upload-json')}
+                        />
+                    )}
+                </Section>
 
-                {/* Módulo 3: Administrar — centrado abajo, span 2 cols */}
-                {admin && administrar.length > 0 && (
-                    <div className="md:col-span-2 flex justify-center">
-                        <div className="w-full md:w-1/2 bg-white/50 rounded-2xl border border-slate-200 p-6">
-                            <h2 className="text-xl font-bold text-slate-700 mb-5 flex items-center gap-2">
-                                <UserPlus className="w-6 h-6 text-amber-600" />
-                                Administrar
-                            </h2>
-                            <div className="grid grid-cols-2 gap-4">
-                                {administrar.map((card, index) => renderCard(card, index))}
-                            </div>
-                        </div>
+                {admin && (
+                    <div className="md:col-span-2">
+                        <Section title="Administrar" icon={UserPlus} iconName="UserPlus">
+                            <ModuleCard
+                                title="Gestionar facturas"
+                                description="Listar y gestionar facturas del sistema."
+                                icon={List}
+                                iconName="List"
+                                action={() => navigate('/gestionar-facturas')}
+                            />
+                            <ModuleCard
+                                title="Crear Usuario"
+                                description="Crea nuevos usuarios para el sistema."
+                                icon={UserPlus}
+                                iconName="UserPlus"
+                                action={() => navigate('/crear-usuario')}
+                            />
+                        </Section>
                     </div>
                 )}
             </div>

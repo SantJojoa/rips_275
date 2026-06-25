@@ -256,11 +256,11 @@ export default function CompareCuvXml() {
     };
 
     return (
-        <div className="py-6">
-            <div className="mb-4 flex items-center justify-between">
+        <div className="fade-up fade-up-1">
+            <div className="mb-5 flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold text-slate-800">Comparar CUV y XML</h1>
-                    <p className="text-slate-400 text-base mt-1">
+                    <h1 className="text-xl font-semibold text-[#111111] tracking-tight">Comparar CUV y XML</h1>
+                    <p className="mt-1 text-sm text-[#787774]">
                         {mode === 'single' ? 'Un par CUV + XML — nombre no importa.' : 'Múltiples archivos emparejados por número FEV.'}
                     </p>
                 </div>

@@ -6,4 +6,66 @@
     --color-blue-var: #462882;
     --color-blue-light-var: #2C1266;
 
+    --font-sans: 'DM Sans', 'Helvetica Neue', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+}
+
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+    font-family: var(--font-sans);
+    color: #111111;
+    background-color: #FBFBFA;
+}
+
+/* Scroll-entry animation */
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.fade-up {
+    animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.fade-up-1 { animation-delay: 0ms; }
+.fade-up-2 { animation-delay: 80ms; }
+.fade-up-3 { animation-delay: 160ms; }
+.fade-up-4 { animation-delay: 240ms; }
+.fade-up-5 { animation-delay: 320ms; }
+
+@media (prefers-reduced-motion: reduce) {
+    .fade-up { animation: none; }
+}
+
+/* React Select overrides */
+.react-select__control {
+    border-color: #EAEAEA !important;
+    border-radius: 6px !important;
+    background-color: #FBFBFA !important;
+    box-shadow: none !important;
+    min-height: 40px !important;
+    font-family: var(--font-sans) !important;
+    font-size: 14px !important;
+}
+.react-select__control:hover {
+    border-color: #c0c0c0 !important;
+}
+.react-select__control--is-focused {
+    border-color: #462882 !important;
+    box-shadow: 0 0 0 2px rgba(70, 40, 130, 0.12) !important;
+}
+.react-select__option--is-focused {
+    background-color: #F7F6F3 !important;
+    color: #111111 !important;
+}
+.react-select__option--is-selected {
+    background-color: #462882 !important;
 }

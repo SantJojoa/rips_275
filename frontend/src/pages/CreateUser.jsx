@@ -3,15 +3,50 @@ import { apiFetch } from '../lib/api';
 import { showError, showSuccess } from '../utils/toastUtils';
 import { Eye, EyeOff } from 'lucide-react';
 
+const inputStyle = {
+    border: '1px solid #EAEAEA',
+    borderRadius: '6px',
+    backgroundColor: '#ffffff',
+    outline: 'none',
+    width: '100%',
+    padding: '8px 12px',
+    fontSize: '14px',
+    color: '#111111',
+    transition: 'border-color 150ms, box-shadow 150ms',
+};
+
+function Field({ label, children }) {
+    return (
+        <div>
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, color: '#111111', marginBottom: '6px' }}>
+                {label}
+            </label>
+            {children}
+        </div>
+    );
+}
+
+function StyledInput({ style: extraStyle, ...props }) {
+    return (
+        <input
+            style={{ ...inputStyle, ...extraStyle }}
+            onFocus={e => {
+                e.target.style.borderColor = '#462882';
+                e.target.style.boxShadow = '0 0 0 3px rgba(70,40,130,0.08)';
+            }}
+            onBlur={e => {
+                e.target.style.borderColor = '#EAEAEA';
+                e.target.style.boxShadow = 'none';
+            }}
+            {...props}
+        />
+    );
+}
+
 export default function CreateUser() {
     const [formData, setFormData] = useState({
-        username: '',
-        nombres: '',
-        apellidos: '',
-        cedula: '',
-        password: '',
-        confirmPassword: '',
-        role: 'USER'
+        username: '', nombres: '', apellidos: '',
+        cedula: '', password: '', confirmPassword: '', role: 'USER'
     });
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
@@ -19,61 +54,32 @@ export default function CreateUser() {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
+        setFormData(prev => ({ ...prev, [name]: value }));
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
-        // Validaciones
-        if (!formData.username || !formData.nombres || !formData.apellidos || !formData.cedula || !formData.password) {
+        if (!formData.username || !formData.nombres || !formData.apellidos || !formData.cedula || !formData.password)
             return showError('Todos los campos son obligatorios');
-        }
-
-        if (formData.password !== formData.confirmPassword) {
+        if (formData.password !== formData.confirmPassword)
             return showError('Las contraseñas no coinciden');
-        }
-
-        if (formData.password.length < 6) {
+        if (formData.password.length < 6)
             return showError('La contraseña debe tener al menos 6 caracteres');
-        }
 
         setLoading(true);
-
         try {
             const res = await apiFetch('/api/auth/create-user', {
                 method: 'POST',
                 body: JSON.stringify({
-                    username: formData.username,
-                    nombres: formData.nombres,
-                    apellidos: formData.apellidos,
-                    cedula: formData.cedula,
-                    password: formData.password,
-                    role: formData.role
+                    username: formData.username, nombres: formData.nombres,
+                    apellidos: formData.apellidos, cedula: formData.cedula,
+                    password: formData.password, role: formData.role
                 })
             });
-
             const data = await res.json();
-
-            if (!res.ok) {
-                return showError(data?.message || 'Error al crear el usuario');
-            }
-
+            if (!res.ok) return showError(data?.message || 'Error al crear el usuario');
             showSuccess(data?.message || 'Usuario creado exitosamente');
-
-            // Limpiar formulario
-            setFormData({
-                username: '',
-                nombres: '',
-                apellidos: '',
-                cedula: '',
-                password: '',
-                confirmPassword: '',
-                role: 'USER'
-            });
+            setFormData({ username: '', nombres: '', apellidos: '', cedula: '', password: '', confirmPassword: '', role: 'USER' });
         } catch (error) {
             showError(error?.message || 'Error al crear el usuario');
         } finally {
@@ -82,141 +88,101 @@ export default function CreateUser() {
     };
 
     return (
-        <div className="py-6">
+        <div className="fade-up fade-up-1">
             <div className="mb-6">
-                <h1 className="text-3xl font-bold text-slate-900 mb-1">
-                    Crear Usuario
-                </h1>
-                <p className="text-slate-500">
-                    Registra un nuevo usuario en el sistema con sus respectivos permisos
+                <h1 className="text-xl font-semibold text-[#111111] tracking-tight">Crear Usuario</h1>
+                <p className="mt-1 text-sm text-[#787774]">
+                    Registra un nuevo usuario en el sistema con sus respectivos permisos.
                 </p>
             </div>
 
-            <div className="bg-white rounded-3xl shadow-xl border border-slate-200 p-10 transition">
-
-                <form onSubmit={handleSubmit} className="space-y-6">
+            <div style={{ border: '1px solid #EAEAEA', borderRadius: '8px', backgroundColor: '#ffffff' }}
+                className="p-6 max-w-2xl">
+                <form onSubmit={handleSubmit} className="space-y-5">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Nombres</label>
-                            <input
-                                type="text"
-                                name="nombres"
-                                value={formData.nombres}
-                                onChange={handleChange}
-                                placeholder="Ingrese los nombres"
-                                required
-                                className="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-2.5 text-slate-900 placeholder:text-slate-400 shadow-sm focus:border-sky-500 focus:bg-white focus:ring-2 focus:ring-sky-400/40 transition"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Apellidos</label>
-                            <input
-                                type="text"
-                                name="apellidos"
-                                value={formData.apellidos}
-                                onChange={handleChange}
-                                placeholder="Ingrese los apellidos"
-                                required
-                                className="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-2.5 text-slate-900 placeholder:text-slate-400 shadow-sm focus:border-sky-500 focus:bg-white focus:ring-2 focus:ring-sky-400/40 transition"
-                            />
-                        </div>
+                        <Field label="Nombres">
+                            <StyledInput type="text" name="nombres" value={formData.nombres}
+                                onChange={handleChange} placeholder="Nombres completos" required />
+                        </Field>
+                        <Field label="Apellidos">
+                            <StyledInput type="text" name="apellidos" value={formData.apellidos}
+                                onChange={handleChange} placeholder="Apellidos completos" required />
+                        </Field>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Cédula</label>
-                            <input
-                                type="text"
-                                name="cedula"
-                                value={formData.cedula}
-                                onChange={handleChange}
-                                placeholder="Ingrese la cédula"
-                                required
-                                className="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-2.5 text-slate-900 placeholder:text-slate-400 shadow-sm focus:border-sky-500 focus:bg-white focus:ring-2 focus:ring-sky-400/40 transition"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Username</label>
-                            <input
-                                type="text"
-                                name="username"
-                                value={formData.username}
-                                onChange={handleChange}
-                                placeholder="Ingrese el username"
-                                required
-                                className="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-2.5 text-slate-900 placeholder:text-slate-400 shadow-sm focus:border-sky-500 focus:bg-white focus:ring-2 focus:ring-sky-400/40 transition"
-                            />
-                        </div>
+                        <Field label="Cedula">
+                            <StyledInput type="text" name="cedula" value={formData.cedula}
+                                onChange={handleChange} placeholder="Numero de cedula" required />
+                        </Field>
+                        <Field label="Username">
+                            <StyledInput type="text" name="username" value={formData.username}
+                                onChange={handleChange} placeholder="Nombre de usuario" required />
+                        </Field>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Contraseña</label>
+                        <Field label="Contrasena">
                             <div className="relative">
-                                <input
-                                    type={showPassword ? "text" : "password"}
-                                    name="password"
-                                    value={formData.password}
-                                    onChange={handleChange}
-                                    placeholder="••••••••"
-                                    required
-                                    className="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-2.5 pr-11 text-slate-900 placeholder:text-slate-400 shadow-sm focus:border-sky-500 focus:bg-white focus:ring-2 focus:ring-sky-400/40 transition"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition"
-                                >
-                                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                <StyledInput
+                                    type={showPassword ? 'text' : 'password'}
+                                    name="password" value={formData.password}
+                                    onChange={handleChange} placeholder="••••••••"
+                                    style={{ paddingRight: '40px' }} required />
+                                <button type="button" onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#787774] hover:text-[#111111] transition-colors cursor-pointer">
+                                    {showPassword ? <EyeOff className="w-4 h-4" strokeWidth={1.5} /> : <Eye className="w-4 h-4" strokeWidth={1.5} />}
                                 </button>
                             </div>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Confirmar contraseña</label>
+                        </Field>
+                        <Field label="Confirmar contrasena">
                             <div className="relative">
-                                <input
-                                    type={showConfirmPassword ? "text" : "password"}
-                                    name="confirmPassword"
-                                    value={formData.confirmPassword}
-                                    onChange={handleChange}
-                                    placeholder="••••••••"
-                                    required
-                                    className="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-2.5 pr-11 text-slate-900 placeholder:text-slate-400 shadow-sm focus:border-sky-500 focus:bg-white focus:ring-2 focus:ring-sky-400/40 transition"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition"
-                                >
-                                    {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                <StyledInput
+                                    type={showConfirmPassword ? 'text' : 'password'}
+                                    name="confirmPassword" value={formData.confirmPassword}
+                                    onChange={handleChange} placeholder="••••••••"
+                                    style={{ paddingRight: '40px' }} required />
+                                <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#787774] hover:text-[#111111] transition-colors cursor-pointer">
+                                    {showConfirmPassword ? <EyeOff className="w-4 h-4" strokeWidth={1.5} /> : <Eye className="w-4 h-4" strokeWidth={1.5} />}
                                 </button>
                             </div>
-                        </div>
+                        </Field>
                     </div>
 
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Rol</label>
+                    <Field label="Rol">
                         <select
-                            name="role"
-                            value={formData.role}
-                            onChange={handleChange}
-                            className="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-2.5 text-slate-900 shadow-sm focus:border-sky-500 focus:bg-white focus:ring-2 focus:ring-sky-400/40 transition"
+                            name="role" value={formData.role} onChange={handleChange}
+                            style={{ ...inputStyle, cursor: 'pointer' }}
+                            onFocus={e => {
+                                e.target.style.borderColor = '#462882';
+                                e.target.style.boxShadow = '0 0 0 3px rgba(70,40,130,0.08)';
+                            }}
+                            onBlur={e => {
+                                e.target.style.borderColor = '#EAEAEA';
+                                e.target.style.boxShadow = 'none';
+                            }}
                         >
                             <option value="USER">Usuario</option>
                             <option value="ADMIN">Administrador</option>
                         </select>
-                    </div>
+                    </Field>
 
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className="cursor-pointer w-full py-3 rounded-xl bg-sky-600 text-white font-medium shadow hover:bg-sky-700 focus:ring-2 focus:ring-sky-400 focus:ring-offset-2 transition disabled:opacity-60 disabled:cursor-not-allowed"
-                    >
-                        {loading ? 'Creando usuario...' : 'Crear usuario'}
-                    </button>
+                    <div style={{ borderTop: '1px solid #EAEAEA' }} className="pt-4">
+                        <button
+                            type="submit" disabled={loading}
+                            style={{
+                                backgroundColor: loading ? '#787774' : '#111111',
+                                borderRadius: '6px',
+                                transition: 'background-color 150ms, transform 100ms',
+                            }}
+                            onMouseDown={e => { if (!loading) e.currentTarget.style.transform = 'scale(0.98)'; }}
+                            onMouseUp={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+                            className="px-5 py-2.5 text-sm font-semibold text-white cursor-pointer disabled:cursor-not-allowed"
+                        >
+                            {loading ? 'Creando...' : 'Crear usuario'}
+                        </button>
+                    </div>
                 </form>
             </div>
         </div>

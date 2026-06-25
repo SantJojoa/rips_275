@@ -153,17 +153,17 @@ export default function UploadJson() {
     };
 
     return (
-        <div className="py-6">
+        <div className="fade-up fade-up-1">
             <div className="mb-6">
-                <h1 className="text-3xl font-bold text-slate-900 mb-1">
+                <h1 className="text-xl font-semibold text-[#111111] tracking-tight">
                     Subir archivo JSON
                 </h1>
-                <p className="text-slate-500">
-                    Sube un archivo JSON para cargar la información
+                <p className="mt-1 text-sm text-[#787774]">
+                    Carga un archivo RIPS en formato JSON.
                 </p>
             </div>
 
-            <div className="bg-white rounded-3xl shadow-xl border border-slate-200 p-10 transition">
+            <div style={{ border: '1px solid #EAEAEA', borderRadius: '8px', backgroundColor: '#ffffff' }} className="p-6 max-w-2xl">
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div>

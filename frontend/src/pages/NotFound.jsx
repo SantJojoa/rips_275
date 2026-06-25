@@ -1,57 +1,41 @@
 import { useNavigate } from "react-router-dom";
-import { AlertTriangle } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function NotFound() {
     const navigate = useNavigate();
-    const MotionDiv = motion.div;
-    const MotionButton = motion.button;
 
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-white to-slate-100 px-6 text-center">
-            <MotionDiv
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5 }}
-                className="max-w-md"
+        <div className="min-h-dvh flex flex-col items-center justify-center px-6 text-center"
+            style={{ backgroundColor: '#FBFBFA' }}>
+            <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                className="max-w-sm"
             >
-                {/* Icono animado */}
-                <div className="flex justify-center mb-6">
-                    <MotionDiv
-                        animate={{ rotate: [0, -10, 10, -10, 0] }}
-                        transition={{ repeat: Infinity, duration: 2 }}
-                        className="bg-green-100 p-4 rounded-full shadow-inner"
-                    >
-                        <AlertTriangle className="text-green-600 w-12 h-12" />
-                    </MotionDiv>
-                </div>
-
-                {/* Título */}
-                <h1 className="text-6xl font-extrabold text-slate-800 tracking-tight">
+                <p className="text-[96px] font-bold text-[#EAEAEA] leading-none tracking-tight select-none">
                     404
+                </p>
+                <h1 className="mt-4 text-lg font-semibold text-[#111111] tracking-tight">
+                    Pagina no encontrada
                 </h1>
-                <p className="mt-3 text-lg text-slate-600 font-medium">
-                    Página no encontrada en FEV RIPS
-                </p>
-                <p className="mt-1 text-sm text-slate-500">
-                    Es posible que la ruta haya cambiado o el enlace sea incorrecto.
+                <p className="mt-2 text-sm text-[#787774]">
+                    La ruta solicitada no existe en el sistema FEV-RIPS.
                 </p>
 
-                {/* Botón */}
-                <MotionButton
-                    onClick={() => navigate("/dashboard")}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="cursor-pointer mt-8 px-6 py-3 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 transition font-semibold"
+                <motion.button
+                    onClick={() => navigate('/dashboard')}
+                    whileTap={{ scale: 0.97 }}
+                    style={{
+                        backgroundColor: '#111111',
+                        borderRadius: '6px',
+                        marginTop: '24px',
+                    }}
+                    className="px-5 py-2.5 text-sm font-semibold text-white cursor-pointer"
                 >
-                    Ir al Dashboard
-                </MotionButton>
-            </MotionDiv>
-
-            {/* Footer */}
-            <footer className="mt-10 text-xs text-slate-400">
-                © {new Date().getFullYear()} Sistema FEV RIPS
-            </footer>
+                    Ir al panel
+                </motion.button>
+            </motion.div>
         </div>
     );
 }
