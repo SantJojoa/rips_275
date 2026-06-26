@@ -1,384 +1,386 @@
-import { useState, useEffect } from "react";
-import DataTable from "react-data-table-component";
-import { fetchBills, deleteBill, updateBill } from "../api/billsApi";
-import { Edit, Save, Trash2, X, AlertCircle } from "lucide-react";
+import { useState, useEffect, useCallback } from 'react';
+import { Trash2, ChevronDown, ChevronUp, Loader2, FileJson, FileText, FileCode, Download, RefreshCw } from 'lucide-react';
+import { apiFetch } from '../lib/api';
+import { deleteBill } from '../api/billsApi';
+import { createPortal } from 'react-dom';
 
-export default function BillsTable() {
-    const [bills, setBills] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [editingId, setEditingId] = useState(null);
-    const [editData, setEditData] = useState({ num_factura: "", valor_factura: "" });
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+const TIPOS = [
+    { key: 'num_usuarios',          label: 'Usuarios',           color: '#7C3AED' },
+    { key: 'num_consultas',         label: 'Consultas',          color: '#1F6C9F' },
+    { key: 'num_procedimientos',    label: 'Procedimientos',     color: '#0891B2' },
+    { key: 'num_medicamentos',      label: 'Medicamentos',       color: '#15803D' },
+    { key: 'num_hospitalizaciones', label: 'Hospitalizaciones',  color: '#B45309' },
+    { key: 'num_urgencias',         label: 'Urgencias',          color: '#B91C1C' },
+    { key: 'num_otros',             label: 'Otros',              color: '#6B7280' },
+];
 
-    const loadBills = async () => {
-        try {
-            setLoading(true);
-            setError(null);
-            const data = await fetchBills();
+function Pill({ n, label, color }) {
+    if (!n || Number(n) === 0) return null;
+    return (
+        <span style={{ backgroundColor: color + '18', color, borderRadius: 6, padding: '2px 7px', fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap' }}>
+            {Number(n)} {label}
+        </span>
+    );
+}
 
-            if (data && data.facturas) {
-                setBills(data.facturas);
-            } else if (Array.isArray(data)) {
-                setBills(data);
-            } else {
-                setBills([]);
-            }
-        } catch (err) {
-            console.error('Error loading bills:', err);
-            setError(err.message || 'Error al cargar facturas');
-            setBills([]);
-        } finally {
-            setLoading(false);
-        }
-    };
+function StatCard({ label, value, color }) {
+    return (
+        <div style={{ border: '1px solid #EAEAEA', borderRadius: 10, backgroundColor: '#fff', padding: '14px 18px' }}>
+            <p style={{ fontSize: 11, fontWeight: 600, color: '#787774', textTransform: 'uppercase', marginBottom: 4 }}>{label}</p>
+            <p style={{ fontSize: 20, fontWeight: 700, color: color || '#111111' }}>{value}</p>
+        </div>
+    );
+}
 
-    useEffect(() => {
-        loadBills();
-    }, []);
-
-    const handleDelete = async (id) => {
-        if (window.confirm("¿Seguro que deseas eliminar esta factura?")) {
-            try {
-                await deleteBill(id);
-                loadBills();
-            } catch (err) {
-                alert('Error al eliminar factura: ' + err.message);
-            }
-        }
-    };
-
-    const handleEdit = (bill) => {
-        setEditingId(bill.id);
-        setEditData({
-            num_factura: bill.num_factura,
-            valor_factura: bill.valor_factura ?? 0,
-        });
-    };
-
-    const handleCancelEdit = () => {
-        setEditingId(null);
-        setEditData({ num_factura: "", valor_factura: "" });
-    };
-
-    const handleUpdate = async (id) => {
-        try {
-            await updateBill(id, editData);
-            setEditingId(null);
-            setEditData({ num_factura: "", valor_factura: "" });
-            loadBills();
-        } catch (err) {
-            alert('Error al actualizar factura: ' + err.message);
-        }
-    };
-
-    const columns = [
-        {
-            name: "ID",
-            selector: (row) => row.id,
-            sortable: true,
-            width: "80px",
-            center: true,
-            cell: (row) => (
-                <div className="font-semibold text-slate-600">{row.id}</div>
-            ),
-        },
-        {
-            name: "Número Factura",
-            selector: (row) => row.num_factura,
-            sortable: true,
-            grow: 2,
-            cell: (row) =>
-                editingId === row.id ? (
-                    <input
-                        className="border-2 border-blue-300 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:border-blue-500 transition"
-                        value={editData.num_factura}
-                        onChange={(e) =>
-                            setEditData({ ...editData, num_factura: e.target.value })
-                        }
-                        placeholder="Número de factura"
-                    />
-                ) : (
-                    <span className="font-medium text-slate-800">{row.num_factura}</span>
-                ),
-        },
-        {
-            name: "Valor",
-            selector: (row) => row.valor_factura,
-            sortable: true,
-            grow: 1,
-            right: true,
-            cell: (row) =>
-                editingId === row.id ? (
-                    <input
-                        type="number"
-                        step="0.01"
-                        className="border-2 border-blue-300 rounded-lg px-3 py-2 text-sm w-full text-right focus:outline-none focus:border-blue-500 transition"
-                        value={editData.valor_factura}
-                        onChange={(e) =>
-                            setEditData({ ...editData, valor_factura: e.target.value })
-                        }
-                        placeholder="0.00"
-                    />
-                ) : (
-                    <span className="font-bold text-emerald-600">
-                        ${Number(row.valor_factura ?? 0).toLocaleString('es-CO', {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2
-                        })}
-                    </span>
-                ),
-        },
-        {
-            name: "Prestador",
-            selector: (row) => row.Control?.Prestador?.nombre_prestador ?? "—",
-            sortable: true,
-            grow: 2,
-            cell: (row) => (
-                <div className="text-slate-700 truncate" title={row.Control?.Prestador?.nombre_prestador}>
-                    {row.Control?.Prestador?.nombre_prestador ?? "—"}
+// ─── Modal confirmación eliminar ─────────────────────────────────────────────
+function ConfirmModal({ factura, onConfirm, onCancel }) {
+    return createPortal(
+        <div
+            style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, backgroundColor: 'rgba(0,0,0,0.45)' }}
+            onClick={onCancel}
+        >
+            <div
+                style={{ backgroundColor: '#fff', borderRadius: 14, padding: '28px 24px', width: '100%', maxWidth: 380, display: 'flex', flexDirection: 'column', gap: 16, boxShadow: '0 20px 60px rgba(0,0,0,0.18)' }}
+                onClick={e => e.stopPropagation()}
+            >
+                <div>
+                    <p style={{ fontSize: 15, fontWeight: 700, color: '#111111', marginBottom: 4 }}>¿Eliminar factura?</p>
+                    <p style={{ fontSize: 13, color: '#787774' }}>
+                        Se desactivará la factura <span style={{ fontWeight: 600, color: '#111111' }}>{factura.num_factura}</span> (radicado: {factura.numero_radicado || '—'}). Esta acción se puede revertir.
+                    </p>
                 </div>
-            ),
-        },
-        {
-            name: "Periodo",
-            selector: (row) => row.Control?.periodo_fac,
-            sortable: true,
-            width: "140px",
-            center: true,
-            cell: (row) => (
-                <div className="text-center">
-                    <span className="inline-block bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold">
-                        {row.Control?.periodo_fac ?? "?"} / {row.Control?.año ?? "?"}
-                    </span>
+                <div style={{ display: 'flex', gap: 10 }}>
+                    <button onClick={onCancel} style={{ flex: 1, padding: '9px 0', borderRadius: 8, border: '1px solid #EAEAEA', backgroundColor: '#F9F9F8', fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#111111' }}>Cancelar</button>
+                    <button onClick={onConfirm} style={{ flex: 1, padding: '9px 0', borderRadius: 8, border: 'none', backgroundColor: '#B91C1C', fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#fff' }}>Eliminar</button>
                 </div>
-            ),
-        },
-        {
-            name: "Acciones",
-            width: "180px",
-            center: true,
-            cell: (row) => (
-                <div className="flex gap-2 justify-center items-center">
-                    {editingId === row.id ? (
-                        <>
-                            <button
-                                onClick={() => handleUpdate(row.id)}
-                                className="bg-emerald-500 hover:bg-emerald-600 text-white p-2 rounded-lg flex items-center justify-center shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105"
-                                title="Guardar cambios"
-                            >
-                                <Save size={16} />
-                            </button>
-                            <button
-                                onClick={handleCancelEdit}
-                                className="bg-gray-500 hover:bg-gray-600 text-white p-2 rounded-lg flex items-center justify-center shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105"
-                                title="Cancelar"
-                            >
-                                <X size={16} />
-                            </button>
-                        </>
-                    ) : (
-                        <>
-                            <button
-                                onClick={() => handleEdit(row)}
-                                className="bg-amber-500 hover:bg-amber-600 text-white p-2 rounded-lg flex items-center justify-center shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105"
-                                title="Editar"
-                            >
-                                <Edit size={16} />
-                            </button>
-                            <button
-                                onClick={() => handleDelete(row.id)}
-                                className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg flex items-center justify-center shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105"
-                                title="Eliminar"
-                            >
-                                <Trash2 size={16} />
-                            </button>
-                        </>
-                    )}
-                </div>
-            ),
-            ignoreRowClick: true,
-            allowOverflow: true,
-            button: true,
-        },
+            </div>
+        </div>,
+        document.body
+    );
+}
+
+// ─── Tarjeta de registro ─────────────────────────────────────────────────────
+function RegistroCard({ r, onDelete, onDescargar }) {
+    const [open, setOpen] = useState(false);
+
+    const fecha  = new Date(r.fecha).toLocaleDateString('es-CO', { year: 'numeric', month: 'short', day: '2-digit' });
+    const valor  = r.valor_factura != null ? `$${Number(r.valor_factura).toLocaleString('es-CO')}` : '—';
+    const usuario = [r.usuario_nombres, r.usuario_apellidos].filter(Boolean).join(' ') || r.username || '—';
+
+    const archivos = [
+        { tipo: 'RIP', file: r.archivos?.rip, icon: FileJson, color: '#1F6C9F' },
+        { tipo: 'CUV', file: r.archivos?.cuv, icon: FileText, color: '#15803D' },
+        { tipo: 'XML', file: r.archivos?.xml, icon: FileCode, color: '#B45309' },
     ];
 
-    const customStyles = {
-        headRow: {
-            style: {
-                backgroundColor: "#1e40af",
-                minHeight: "56px",
-                borderRadius: "12px 12px 0 0",
-            },
-        },
-        headCells: {
-            style: {
-                color: "#ffffff",
-                fontSize: "14px",
-                fontWeight: "700",
-                textTransform: "uppercase",
-                letterSpacing: "0.5px",
-                paddingLeft: "16px",
-                paddingRight: "16px",
-            },
-        },
-        rows: {
-            style: {
-                minHeight: "60px",
-                fontSize: "14px",
-                borderBottom: "1px solid #e2e8f0",
-                transition: "background-color 0.2s ease",
-                "&:hover": {
-                    backgroundColor: "#f8fafc",
-                    cursor: "pointer",
-                },
-                "&:last-of-type": {
-                    borderBottom: "none",
-                },
-            },
-        },
-        cells: {
-            style: {
-                paddingLeft: "16px",
-                paddingRight: "16px",
-            },
-        },
-        pagination: {
-            style: {
-                borderTop: "2px solid #e2e8f0",
-                minHeight: "56px",
-                fontSize: "13px",
-                color: "#475569",
-                backgroundColor: "#f8fafc",
-            },
-            pageButtonsStyle: {
-                borderRadius: "8px",
-                height: "32px",
-                width: "32px",
-                padding: "4px",
-                margin: "0 4px",
-                cursor: "pointer",
-                transition: "all 0.2s ease",
-                backgroundColor: "transparent",
-                color: "#475569",
-                fill: "#475569",
-                "&:hover:not(:disabled)": {
-                    backgroundColor: "#e2e8f0",
-                },
-                "&:disabled": {
-                    cursor: "not-allowed",
-                    opacity: 0.4,
-                },
-            },
-        },
-    };
-
-    const paginationComponentOptions = {
-        rowsPerPageText: "Filas por página:",
-        rangeSeparatorText: "de",
-        selectAllRowsItem: true,
-        selectAllRowsItemText: "Todos",
-    };
-
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center py-16">
-                <div className="text-center">
-                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-                    <p className="text-slate-600">Cargando facturas...</p>
-                </div>
-            </div>
-        );
-    }
-
     return (
-        <div className="py-6">
-            <div className="mb-8">
-                <h1 className="text-3xl font-bold text-slate-900 mb-1">
-                    Gestión de Facturas
-                </h1>
-                <p className="text-slate-500">
-                    Administra y controla todas las facturas del sistema
-                </p>
-            </div>
+        <div style={{ border: '1px solid #EAEAEA', borderRadius: 10, backgroundColor: '#fff', overflow: 'hidden' }}>
+            {/* Cabecera */}
+            <button
+                onClick={() => setOpen(v => !v)}
+                style={{ width: '100%', textAlign: 'left', padding: '13px 18px', cursor: 'pointer', background: 'none', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}
+            >
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 3, flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                        <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 13, color: '#111111' }}>{r.numero_radicado || '—'}</span>
+                        <span style={{ fontSize: 11, color: '#787774', backgroundColor: '#F0F0EF', padding: '1px 7px', borderRadius: 5 }}>{fecha}</span>
+                        <span style={{ fontSize: 11, color: '#462882', backgroundColor: '#F0EBF8', padding: '1px 7px', borderRadius: 5 }}>{usuario}</span>
+                    </div>
+                    <div style={{ fontSize: 12, color: '#787774', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {r.nombre_prestador || '—'} · Factura <span style={{ fontWeight: 600, color: '#111111' }}>{r.num_factura}</span>
+                    </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+                    <span style={{ fontWeight: 700, fontSize: 14, color: '#111111' }}>{valor}</span>
+                    <button
+                        onClick={e => { e.stopPropagation(); onDelete(r); }}
+                        style={{ padding: '5px', borderRadius: 6, border: '1px solid #FECACA', backgroundColor: '#FEF2F2', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                        title="Eliminar"
+                    >
+                        <Trash2 style={{ width: 14, height: 14, color: '#B91C1C' }} />
+                    </button>
+                    {open ? <ChevronUp style={{ width: 15, height: 15, color: '#787774' }} /> : <ChevronDown style={{ width: 15, height: 15, color: '#787774' }} />}
+                </div>
+            </button>
 
-            {error && (
-                <div className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-lg shadow-sm">
-                    <div className="flex items-center">
-                        <AlertCircle className="text-red-500 mr-3" size={20} />
-                        <div>
-                            <p className="text-red-800 font-semibold">Error</p>
-                            <p className="text-red-700 text-sm">{error}</p>
+            {/* Detalle */}
+            {open && (
+                <div style={{ borderTop: '1px solid #F0F0EF', padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 10 }}>
+                        {[
+                            { label: 'Período',   value: `${r.periodo_fac}/${r['año'] ?? r.año}` },
+                            { label: 'NIT',       value: r.num_nit },
+                            { label: 'Prestador', value: r.nombre_prestador },
+                            { label: 'Valor',     value: valor },
+                            { label: 'Usuario',   value: usuario },
+                            { label: 'Fecha',     value: fecha },
+                        ].map((item, i) => (
+                            <div key={i} style={{ backgroundColor: '#F9F9F8', borderRadius: 8, padding: '8px 12px' }}>
+                                <p style={{ fontSize: 10, fontWeight: 600, color: '#787774', textTransform: 'uppercase', marginBottom: 2 }}>{item.label}</p>
+                                <p style={{ fontSize: 13, fontWeight: 600, color: '#111111', wordBreak: 'break-word' }}>{item.value || '—'}</p>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div>
+                        <p style={{ fontSize: 11, fontWeight: 600, color: '#787774', textTransform: 'uppercase', marginBottom: 6 }}>Resumen RIP</p>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                            {TIPOS.map(t => <Pill key={t.key} n={r[t.key]} label={t.label} color={t.color} />)}
+                            {TIPOS.every(t => !r[t.key] || Number(r[t.key]) === 0) && (
+                                <span style={{ fontSize: 12, color: '#787774', fontStyle: 'italic' }}>Sin datos de servicios</span>
+                            )}
+                        </div>
+                    </div>
+
+                    <div>
+                        <p style={{ fontSize: 11, fontWeight: 600, color: '#787774', textTransform: 'uppercase', marginBottom: 6 }}>Archivos</p>
+                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                            {archivos.map(({ tipo, file, icon: Icon, color }) => (
+                                file ? (
+                                    <button
+                                        key={tipo}
+                                        onClick={() => onDescargar(r.control_id, file)}
+                                        style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, border: `1px solid ${color}30`, backgroundColor: color + '10', cursor: 'pointer', fontSize: 12, fontWeight: 600, color }}
+                                        onMouseEnter={e => e.currentTarget.style.backgroundColor = color + '20'}
+                                        onMouseLeave={e => e.currentTarget.style.backgroundColor = color + '10'}
+                                    >
+                                        <Icon style={{ width: 14, height: 14 }} />
+                                        <Download style={{ width: 12, height: 12 }} />
+                                        {tipo}
+                                    </button>
+                                ) : (
+                                    <span key={tipo} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, border: '1px solid #EAEAEA', backgroundColor: '#F9F9F8', fontSize: 12, color: '#BBBBBB' }}>
+                                        <Icon style={{ width: 14, height: 14 }} />{tipo}
+                                    </span>
+                                )
+                            ))}
                         </div>
                     </div>
                 </div>
             )}
+        </div>
+    );
+}
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div className="bg-white rounded-xl shadow-md p-6 border border-slate-200">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-slate-600 text-sm font-medium">Total Facturas</p>
-                            <p className="text-3xl font-bold text-slate-900 mt-1">{bills.length}</p>
-                        </div>
-                        <div className="bg-blue-100 rounded-full p-3">
-                            <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
-                        </div>
-                    </div>
+// ─── Componente principal ─────────────────────────────────────────────────────
+export default function BillsTable() {
+    const [registros,    setRegistros]    = useState([]);
+    const [loading,      setLoading]      = useState(true);
+    const [error,        setError]        = useState(null);
+    const [confirmando,  setConfirmando]  = useState(null); // registro a eliminar
+
+    // Filtros
+    const [busqueda,     setBusqueda]     = useState('');
+    const [filtroPrestador, setFiltroPrestador] = useState('');
+    const [filtroUsuario,   setFiltroUsuario]   = useState('');
+    const [fechaDesde,   setFechaDesde]   = useState('');
+    const [fechaHasta,   setFechaHasta]   = useState('');
+    const [filtroPeriodo, setFiltroPeriodo] = useState('');
+
+    const cargar = useCallback(async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const res  = await apiFetch('/api/auth/todos-registros');
+            const data = await res.json();
+            if (!res.ok) throw new Error(data?.message || 'Error');
+            setRegistros(data);
+        } catch (e) {
+            setError(e.message);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => { cargar(); }, [cargar]);
+
+    // Opciones únicas para selects
+    const prestadores = [...new Map(registros.map(r => [r.prestador_id, r.nombre_prestador])).entries()]
+        .filter(([id]) => id)
+        .map(([id, nombre]) => ({ id, nombre }));
+
+    const usuarios = [...new Map(registros.map(r => [r.id_system_user, { id: r.id_system_user, label: [r.usuario_nombres, r.usuario_apellidos].filter(Boolean).join(' ') || r.username || '—' }])).entries()]
+        .filter(([id]) => id)
+        .map(([, v]) => v);
+
+    // Filtrado
+    const hayFiltros = busqueda || filtroPrestador || filtroUsuario || fechaDesde || fechaHasta || filtroPeriodo;
+    const filtrados  = registros.filter(r => {
+        if (busqueda.trim()) {
+            const q = busqueda.trim().toLowerCase();
+            if (!String(r.num_factura || '').toLowerCase().includes(q) &&
+                !String(r.numero_radicado || '').toLowerCase().includes(q)) return false;
+        }
+        if (filtroPrestador && String(r.prestador_id) !== filtroPrestador) return false;
+        if (filtroUsuario   && String(r.id_system_user) !== filtroUsuario) return false;
+        if (fechaDesde && new Date(r.fecha) < new Date(fechaDesde)) return false;
+        if (fechaHasta) {
+            const h = new Date(fechaHasta); h.setHours(23, 59, 59, 999);
+            if (new Date(r.fecha) > h) return false;
+        }
+        if (filtroPeriodo.trim()) {
+            const mm   = String(r.periodo_fac || '').padStart(2, '0');
+            const yyyy = String(r['año'] ?? r.año ?? '');
+            if (!`${mm}/${yyyy}`.includes(filtroPeriodo.trim())) return false;
+        }
+        return true;
+    });
+
+    const totalValor = filtrados.reduce((s, r) => s + (Number(r.valor_factura) || 0), 0);
+
+    const handleDescargar = async (controlId, filename) => {
+        try {
+            const res = await apiFetch(`/api/auth/descargar-archivo-admin?controlId=${controlId}&filename=${encodeURIComponent(filename)}`);
+            if (!res.ok) { alert('No se pudo descargar el archivo'); return; }
+            const blob = await res.blob();
+            const url  = URL.createObjectURL(blob);
+            const a    = document.createElement('a');
+            a.href = url; a.download = filename; a.click();
+            URL.revokeObjectURL(url);
+        } catch {
+            alert('Error al descargar');
+        }
+    };
+
+    const handleEliminar = async () => {
+        if (!confirmando) return;
+        try {
+            await deleteBill(confirmando.transaccion_id);
+            setConfirmando(null);
+            cargar();
+        } catch (e) {
+            alert('Error al eliminar: ' + e.message);
+        }
+    };
+
+    const limpiar = () => {
+        setBusqueda(''); setFiltroPrestador(''); setFiltroUsuario('');
+        setFechaDesde(''); setFechaHasta(''); setFiltroPeriodo('');
+    };
+
+    const inputStyle = { width: '100%', padding: '6px 10px', borderRadius: 7, border: '1px solid #D1D5DB', fontSize: 13, outline: 'none', boxSizing: 'border-box', backgroundColor: '#fff' };
+    const labelStyle = { display: 'block', fontSize: 11, fontWeight: 600, color: '#787774', textTransform: 'uppercase', marginBottom: 4 };
+
+    return (
+        <div className="fade-up fade-up-1">
+            <div className="mb-5 flex items-end justify-between">
+                <div>
+                    <h1 className="text-xl font-semibold text-[#111111] tracking-tight">Gestionar facturas</h1>
+                    <p className="mt-1 text-sm text-[#787774]">Todas las facturas registradas en el sistema.</p>
                 </div>
-                <div className="bg-white rounded-xl shadow-md p-6 border border-slate-200">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-slate-600 text-sm font-medium">Valor Total</p>
-                            <p className="text-3xl font-bold text-emerald-600 mt-1">
-                                ${bills.reduce((sum, bill) => sum + (Number(bill.valor_factura) || 0), 0).toLocaleString('es-CO')}
-                            </p>
-                        </div>
-                        <div className="bg-emerald-100 rounded-full p-3">
-                            <svg className="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-                <div className="bg-white rounded-xl shadow-md p-6 border border-slate-200">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-slate-600 text-sm font-medium">Promedio</p>
-                            <p className="text-3xl font-bold text-amber-600 mt-1">
-                                ${bills.length > 0 ? Math.round(bills.reduce((sum, bill) => sum + (Number(bill.valor_factura) || 0), 0) / bills.length).toLocaleString('es-CO') : 0}
-                            </p>
-                        </div>
-                        <div className="bg-amber-100 rounded-full p-3">
-                            <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                            </svg>
-                        </div>
-                    </div>
-                </div>
+                <button
+                    onClick={cargar}
+                    disabled={loading}
+                    style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 8, border: '1px solid #EAEAEA', backgroundColor: '#fff', cursor: loading ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 600, color: '#111111' }}
+                >
+                    <RefreshCw style={{ width: 14, height: 14 }} className={loading ? 'animate-spin' : ''} />
+                    Actualizar
+                </button>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200">
-                <DataTable
-                    columns={columns}
-                    data={bills}
-                    pagination
-                    paginationComponentOptions={paginationComponentOptions}
-                    highlightOnHover
-                    pointerOnHover
-                    customStyles={customStyles}
-                    noDataComponent={
-                        <div className="py-16 text-center">
-                            <svg className="mx-auto h-12 w-12 text-slate-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
-                            <p className="text-slate-600 text-lg font-medium mb-1">No hay facturas registradas</p>
-                            <p className="text-slate-500 text-sm">Las facturas aparecerán aquí cuando se registren</p>
-                        </div>
-                    }
+            {/* Stats */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 12, marginBottom: 18 }}>
+                <StatCard label="Total facturas"   value={filtrados.length} />
+                <StatCard label="Valor total"       value={`$${totalValor.toLocaleString('es-CO')}`} color="#15803D" />
+                <StatCard label="Promedio"          value={filtrados.length ? `$${Math.round(totalValor / filtrados.length).toLocaleString('es-CO')}` : '—'} color="#B45309" />
+            </div>
+
+            {/* Filtros */}
+            <div style={{ border: '1px solid #EAEAEA', borderRadius: 10, backgroundColor: '#fff', padding: '14px 18px', marginBottom: 16, display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'flex-end' }}>
+                <div style={{ flex: '1 1 160px', minWidth: 0 }}>
+                    <label style={labelStyle}>Factura / Radicado</label>
+                    <input type="text" value={busqueda} onChange={e => setBusqueda(e.target.value)} placeholder="Buscar..." style={inputStyle} />
+                </div>
+
+                <div style={{ flex: '1 1 180px', minWidth: 0 }}>
+                    <label style={labelStyle}>Prestador</label>
+                    <select value={filtroPrestador} onChange={e => setFiltroPrestador(e.target.value)} style={inputStyle}>
+                        <option value="">Todos</option>
+                        {prestadores.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
+                    </select>
+                </div>
+
+                <div style={{ flex: '1 1 160px', minWidth: 0 }}>
+                    <label style={labelStyle}>Usuario</label>
+                    <select value={filtroUsuario} onChange={e => setFiltroUsuario(e.target.value)} style={inputStyle}>
+                        <option value="">Todos</option>
+                        {usuarios.map(u => <option key={u.id} value={u.id}>{u.label}</option>)}
+                    </select>
+                </div>
+
+                <div style={{ flex: '1 1 130px', minWidth: 0 }}>
+                    <label style={labelStyle}>Fecha desde</label>
+                    <input type="date" value={fechaDesde} onChange={e => setFechaDesde(e.target.value)} style={inputStyle} />
+                </div>
+
+                <div style={{ flex: '1 1 130px', minWidth: 0 }}>
+                    <label style={labelStyle}>Hasta</label>
+                    <input type="date" value={fechaHasta} onChange={e => setFechaHasta(e.target.value)} style={inputStyle} />
+                </div>
+
+                <div style={{ flex: '1 1 110px', minWidth: 0 }}>
+                    <label style={labelStyle}>Período</label>
+                    <input type="text" value={filtroPeriodo} onChange={e => setFiltroPeriodo(e.target.value)} placeholder="MM/YYYY" style={inputStyle} />
+                </div>
+
+                {hayFiltros && (
+                    <button onClick={limpiar} style={{ padding: '6px 14px', borderRadius: 7, border: '1px solid #EAEAEA', backgroundColor: '#F9F9F8', fontSize: 12, fontWeight: 600, color: '#787774', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                        Limpiar
+                    </button>
+                )}
+            </div>
+
+            {hayFiltros && (
+                <p style={{ fontSize: 12, color: '#787774', marginBottom: 8 }}>{filtrados.length} de {registros.length} registros</p>
+            )}
+
+            {/* Contenido */}
+            {loading && (
+                <div style={{ textAlign: 'center', padding: '48px 0' }}>
+                    <Loader2 style={{ width: 32, height: 32, color: '#1F6C9F', margin: '0 auto' }} className="animate-spin" />
+                    <p style={{ marginTop: 12, fontSize: 14, color: '#787774' }}>Cargando registros...</p>
+                </div>
+            )}
+
+            {error && !loading && (
+                <div style={{ border: '1px solid #FECACA', borderRadius: 10, backgroundColor: '#FEF2F2', padding: '14px 18px' }}>
+                    <p style={{ fontSize: 13, color: '#B91C1C', fontWeight: 600 }}>Error: {error}</p>
+                </div>
+            )}
+
+            {!loading && !error && registros.length === 0 && (
+                <div style={{ border: '1px solid #EAEAEA', borderRadius: 10, backgroundColor: '#F9F9F8', padding: '48px 0', textAlign: 'center' }}>
+                    <p style={{ fontSize: 14, color: '#787774' }}>No hay facturas registradas.</p>
+                </div>
+            )}
+
+            {!loading && !error && registros.length > 0 && filtrados.length === 0 && (
+                <div style={{ border: '1px solid #EAEAEA', borderRadius: 10, backgroundColor: '#F9F9F8', padding: '32px 0', textAlign: 'center' }}>
+                    <p style={{ fontSize: 14, color: '#787774' }}>Ningún registro coincide con los filtros.</p>
+                </div>
+            )}
+
+            {!loading && filtrados.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {filtrados.map(r => (
+                        <RegistroCard
+                            key={r.control_id}
+                            r={r}
+                            onDelete={setConfirmando}
+                            onDescargar={handleDescargar}
+                        />
+                    ))}
+                </div>
+            )}
+
+            {confirmando && (
+                <ConfirmModal
+                    factura={confirmando}
+                    onConfirm={handleEliminar}
+                    onCancel={() => setConfirmando(null)}
                 />
-            </div>
+            )}
         </div>
     );
 }

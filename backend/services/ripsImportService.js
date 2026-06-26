@@ -85,7 +85,7 @@ export class RipsImportService {
     }
 
     static async createTransaction(controlId, invoiceData, userCacheManager, transaction) {
-        const { nit, numFactura, tipoNota, numNota } = invoiceData;
+        const { nit, numFactura, tipoNota, numNota, valorFactura } = invoiceData;
 
         await this.validateDuplicateInvoice(nit, numFactura, transaction);
         const trx = await Transaccion.create(
@@ -95,6 +95,7 @@ export class RipsImportService {
                 num_factura: String(numFactura),
                 tipo_nota: String(tipoNota),
                 num_nota: String(numNota),
+                ...(valorFactura != null && { valor_factura: valorFactura }),
             },
             { transaction }
         );
@@ -137,6 +138,7 @@ export class RipsImportService {
         } = requestData;
 
         const invoiceData = RipsValidator.validateRipsData(ripsData);
+        if (requestData.valorFactura != null) invoiceData.valorFactura = requestData.valorFactura;
 
         const prestador = await this.findPrestador(id_prestador, prestadorNit, prestadorCod);
 
@@ -175,6 +177,14 @@ export class RipsImportService {
                 t
             );
             created.transaccionId = trx.id;
+
+            // Generar radicado: numFactura_nit_aaaammdd
+            const fecha = new Date();
+            const aaaa  = fecha.getFullYear();
+            const mm    = String(fecha.getMonth() + 1).padStart(2, '0');
+            const dd    = String(fecha.getDate()).padStart(2, '0');
+            const radicado = `${invoiceData.numFactura}_${aaaa}${mm}${dd}`;
+            await control.update({ numero_radicado: radicado }, { transaction: t });
 
             await RipsProcessorService.processRootServices(
                 ripsData,

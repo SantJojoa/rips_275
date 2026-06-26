@@ -1,4 +1,5 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Upload, FileJson, FileCode, CheckCircle2, AlertCircle, XCircle, Loader2, RotateCcw, ChevronDown, ChevronUp } from 'lucide-react';
 import { consultarCUV } from '../services/searchBill.js';
 import { apiFetch } from '../lib/api.js';
@@ -114,7 +115,11 @@ function extractFromXml(text) {
         qrNumFac = numFacMatch?.[1]?.trim() || null;
     }
 
-    return { parentDocumentID, qrNumFac };
+    // <cac:LegalMonetaryTotal><cbc:LineExtensionAmount currencyID="COP">VALUE</cbc:LineExtensionAmount>
+    const lineExtMatch = text.match(/<[^:>]*:?LineExtensionAmount[^>]*>([^<]+)<\/[^:>]*:?LineExtensionAmount>/i);
+    const lineExtensionAmount = lineExtMatch?.[1]?.trim() || null;
+
+    return { parentDocumentID, qrNumFac, lineExtensionAmount };
 }
 
 // ─── Dropzone ────────────────────────────────────────────────────────────────
@@ -295,6 +300,8 @@ export default function CargarFactura() {
     const [parsed, setParsed] = useState({ cuv: null, rip: null, xml: null });
     const [loading, setLoading] = useState(false);
     const [uploading, setUploading] = useState(false);
+    const [uploadDone, setUploadDone] = useState(false);
+    const [uploadModal, setUploadModal] = useState(null); // { radicado, fecha }
     const [result, setResult] = useState(null);
 
     // Período y prestador
@@ -367,12 +374,22 @@ export default function CargarFactura() {
             fd.append('prestadorId', String(prestadorId));
             fd.append('periodo_fac', String(periodoFac));
             fd.append('anio', String(anio));
+            // Valor: LineExtensionAmount del XML, fallback TotalFactura de la API del Ministerio
+            const valorFactura = result?.xmlLineExt ?? result?.apiTotal ?? null;
+            if (valorFactura != null) fd.append('valorFactura', String(valorFactura));
 
             const res = await apiFetch('/api/auth/upload-json-file', { method: 'POST', body: fd });
             const data = await res.json();
             if (!res.ok) throw new Error(data?.message || 'Error en la carga');
-            toast.success(data?.message || 'Factura subida correctamente');
-            if (data?.radicado) toast.success(`Radicado: ${data.radicado}`);
+
+            setUploadDone(true);
+            setUploadModal({
+                radicado: data.radicado || '—',
+                fecha: new Date().toLocaleString('es-CO', {
+                    year: 'numeric', month: 'long', day: 'numeric',
+                    hour: '2-digit', minute: '2-digit',
+                }),
+            });
         } catch (err) {
             toast.error(err.message || 'Error al subir');
         } finally {
@@ -432,10 +449,20 @@ export default function CargarFactura() {
                 && nCuvFactura === nXmlParent
                 && nCuvFactura === nXmlQr;
 
+            // Validación de valor: TotalFactura API vs LineExtensionAmount XML
+            const apiTotal = apiData.TotalFactura != null ? Number(apiData.TotalFactura) : null;
+            const xmlLineExt = parsed.xml?.lineExtensionAmount != null
+                ? Number(parsed.xml.lineExtensionAmount)
+                : null;
+            const valorMatch = apiTotal !== null && xmlLineExt !== null
+                ? Math.abs(apiTotal - xmlLineExt) < 0.01
+                : null; // null = no se puede comparar (falta alguno)
+
             setResult({
                 apiData, isValid, cuvMatch, cuvCode, apiCuv,
                 cuvFactura, ripNumFactura, xmlParentDoc, xmlQrNumFac,
                 checks, allMatch,
+                apiTotal, xmlLineExt, valorMatch,
             });
 
             if (!isValid) {
@@ -654,6 +681,33 @@ export default function CargarFactura() {
                         </div>
                     </Collapsible>
 
+                    {/* Validación de valor */}
+                    <Collapsible
+                        title="Validación de valor — TotalFactura vs XML"
+                        badge={
+                            result.valorMatch === null ? 'Sin datos'
+                            : result.valorMatch ? 'Valores coinciden'
+                            : 'Valores no coinciden'
+                        }
+                        badgeOk={result.valorMatch === true}
+                        defaultOpen={result.valorMatch !== true}
+                    >
+                        {result.valorMatch === null ? (
+                            <p className="text-xs text-slate-500 italic">
+                                No se pudo comparar: falta TotalFactura en la respuesta del Ministerio o LineExtensionAmount en el XML.
+                            </p>
+                        ) : (
+                            <MatchRow
+                                label="TotalFactura (Ministerio) = LineExtensionAmount (XML)"
+                                values={[
+                                    { src: 'API · TotalFactura', val: result.apiTotal != null ? `$${Number(result.apiTotal).toLocaleString('es-CO')}` : null },
+                                    { src: 'XML · LineExtensionAmount', val: result.xmlLineExt != null ? `$${Number(result.xmlLineExt).toLocaleString('es-CO')}` : null },
+                                ]}
+                                ok={result.valorMatch}
+                            />
+                        )}
+                    </Collapsible>
+
                     {/* Detalle API CUV */}
                     {(() => {
                         const esValido = result.apiData.EsValido === true || result.apiData.ResultState === true;
@@ -719,11 +773,22 @@ export default function CargarFactura() {
                     {result.isValid && result.allMatch && (
                         <button
                             onClick={handleSubir}
-                            disabled={uploading}
-                            style={{ borderRadius: 10, backgroundColor: uploading ? undefined : '#1F6C9F' }}
-                            className="w-full py-3 text-sm font-semibold text-white flex items-center justify-center gap-2 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed transition-colors hover:opacity-90"
+                            disabled={uploading || uploadDone}
+                            style={{
+                                borderRadius: 10,
+                                cursor: uploading || uploadDone ? 'not-allowed' : 'pointer',
+                                backgroundColor: uploadDone ? '#166534' : uploading ? '#374151' : '#1F6C9F',
+                                transition: 'background-color 400ms',
+                            }}
+                            className="w-full py-3 text-sm font-semibold text-white flex items-center justify-center gap-2 hover:opacity-90"
                         >
-                            {uploading ? <><Loader2 className="w-4 h-4 animate-spin" /> Subiendo...</> : <>Subir al sistema</>}
+                            {uploading ? (
+                                <><Loader2 className="w-4 h-4 animate-spin" /> Subiendo al sistema...</>
+                            ) : uploadDone ? (
+                                <><CheckCircle2 className="w-4 h-4" /> Factura subida</>
+                            ) : (
+                                <>Subir al sistema</>
+                            )}
                         </button>
                     )}
 
@@ -746,6 +811,65 @@ export default function CargarFactura() {
                         <p className="text-xs text-red-600 mt-0.5">{result.error}</p>
                     </div>
                 </div>
+            )}
+
+            {/* Modal de éxito — renderizado en document.body vía portal */}
+            {uploadModal && createPortal(
+                <div
+                    style={{
+                        position: 'fixed', inset: 0, zIndex: 9999,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        padding: 16,
+                        backgroundColor: 'rgba(0,0,0,0.5)',
+                    }}
+                    onClick={() => setUploadModal(null)}
+                >
+                    <div
+                        style={{
+                            backgroundColor: '#ffffff',
+                            borderRadius: 16,
+                            padding: '32px 28px',
+                            boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
+                            width: '100%',
+                            maxWidth: 360,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: 20,
+                        }}
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <div style={{ width: 64, height: 64, borderRadius: '50%', backgroundColor: '#DCFCE7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <CheckCircle2 style={{ width: 32, height: 32, color: '#16a34a' }} />
+                        </div>
+
+                        <div style={{ textAlign: 'center' }}>
+                            <p style={{ fontSize: 15, fontWeight: 600, color: '#111111', marginBottom: 4 }}>Factura subida correctamente</p>
+                            <p style={{ fontSize: 13, color: '#787774' }}>La factura ha sido registrada en el sistema.</p>
+                        </div>
+
+                        <div style={{ backgroundColor: '#F9F9F8', borderRadius: 10, padding: '14px 18px', width: '100%', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 13 }}>
+                                <span style={{ color: '#787774', fontWeight: 500, flexShrink: 0 }}>Radicado</span>
+                                <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#111111', textAlign: 'right' }}>{uploadModal.radicado}</span>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 13 }}>
+                                <span style={{ color: '#787774', fontWeight: 500, flexShrink: 0 }}>Fecha</span>
+                                <span style={{ fontWeight: 500, color: '#111111', textAlign: 'right' }}>{uploadModal.fecha}</span>
+                            </div>
+                        </div>
+
+                        <button
+                            onClick={() => setUploadModal(null)}
+                            style={{ borderRadius: 10, backgroundColor: '#166534', cursor: 'pointer', width: '100%', padding: '10px 0', fontSize: 14, fontWeight: 600, color: '#ffffff', border: 'none' }}
+                            onMouseEnter={e => e.currentTarget.style.opacity = '0.88'}
+                            onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+                        >
+                            Cerrar
+                        </button>
+                    </div>
+                </div>,
+                document.body
             )}
         </div>
     );

@@ -32,7 +32,7 @@ export const uploadRipsJsonFile = async (req, res) => {
         const dataObj = RipsValidator.parseJsonFile(ripFile.path);
 
         const { id: id_system_user } = req.user || {};
-        const { prestadorId, periodo_fac, anio, status } = req.body;
+        const { prestadorId, periodo_fac, anio, status, valorFactura } = req.body;
 
         // Importar a BD con ruta temporal; la actualizamos luego con la carpeta real
         const result = await RipsImportService.processRipsImport({
@@ -43,6 +43,7 @@ export const uploadRipsJsonFile = async (req, res) => {
             status,
             route: ripFile.path,
             ripsData: dataObj,
+            valorFactura: valorFactura != null ? parseFloat(valorFactura) : null,
         });
 
         // ── Organizar archivos ────────────────────────────────────────────────
