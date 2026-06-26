@@ -1,7 +1,11 @@
 import XLSX from 'xlsx';
 import { Sequelize, DataTypes } from 'sequelize';
 import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+import path from 'path';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 dotenv.config();
 
@@ -21,7 +25,7 @@ const Prestador = sequelize.define('Prestador', {
     nombre_departamento: DataTypes.STRING,
     cod_habilitacion: DataTypes.STRING,
     nombre_prestador: DataTypes.STRING,
-    nit: DataTypes.INTEGER,
+    nit: DataTypes.BIGINT,
     razon_social: DataTypes.STRING,
     ese: DataTypes.STRING,
     direccion: DataTypes.STRING,
@@ -37,9 +41,9 @@ const Prestador = sequelize.define('Prestador', {
     naju_codigo: DataTypes.STRING,
 }, {
     tableName: 'prestadores',
-    timestamps: true,
-    underscored: false,    // ojo, no es 'underscore'
-    paranoid: false       // quitar para que no busque deletedAt
+    timestamps: false,
+    underscored: false,
+    paranoid: false
 
 });
 
@@ -48,26 +52,39 @@ async function importPrestadores() {
         await sequelize.authenticate();
         console.log('----> Conexión exitosa a la base de datos // importPrestadores.js');
 
-        const workbook = XLSX.readFile('Prestadores1.xlsx');
+        await sequelize.query('ALTER TABLE prestadores ALTER COLUMN nit TYPE BIGINT USING nit::BIGINT').catch(() => {});
+        await sequelize.query('ALTER TABLE prestadores ALTER COLUMN fax TYPE BIGINT USING fax::BIGINT').catch(() => {});
+
+        const workbook = XLSX.readFile(path.join(__dirname, 'Prestadores1.xlsx'));
         const sheetName = workbook.SheetNames[0];
         const sheet = workbook.Sheets[sheetName];
         const data = XLSX.utils.sheet_to_json(sheet);
         console.log('----> Datos leídos correctamente // importPrestadores.js');
 
+        const toBigInt = (val) => {
+            const n = parseInt(val, 10);
+            return isNaN(n) ? null : n;
+        };
+        const toInt = (val) => {
+            const n = parseInt(val, 10);
+            return isNaN(n) ? null : n;
+        };
+
+        await sequelize.query('TRUNCATE TABLE prestadores RESTART IDENTITY CASCADE');
+
         for (const row of data) {
-            console.log(row);
             await Prestador.create({
                 nombre_departamento: row.nombre_departamento,
                 cod_habilitacion: row.cod_habilitacion,
                 nombre_prestador: row.nombre_prestador,
-                nit: row.nit,
+                nit: toBigInt(row.nit),
                 razon_social: row.razon_social,
                 ese: row.ese,
                 direccion: row.direccion,
-                telefono: row.telefono,
-                fax: row.fax,
+                telefono: String(row.telefono ?? ''),
+                fax: toBigInt(row.fax),
                 email: row.email,
-                nivel: row.nivel,
+                nivel: toInt(row.nivel),
                 carcter: row.carcter,
                 habilitado: row.habilitado,
                 naju_nombre: row.naju_nombre,

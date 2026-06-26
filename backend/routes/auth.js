@@ -17,7 +17,7 @@ router.post('/create-user', authenticate, authorize, createUser);
 
 
 
-router.get('/prestadores', authenticate, authorize, async (req, res) => {
+router.get('/prestadores', authenticate, async (req, res) => {
     try {
         const list = await db.Prestador.findAll({
             attributes: ['id', 'nombre_prestador', 'nit', 'cod_habilitacion'],
@@ -36,7 +36,12 @@ router.get('/prestadores', authenticate, authorize, async (req, res) => {
 });
 
 router.post('/upload-json', authenticate, authorize, uploadRipsJson);
-router.post('/upload-json-file', authenticate, authorize, upload.single('file'), uploadRipsJsonFile);
+router.post('/upload-json-file', authenticate, upload.fields([
+    { name: 'file', maxCount: 1 }, // admin (legacy)
+    { name: 'rip',  maxCount: 1 }, // user
+    { name: 'cuv',  maxCount: 1 },
+    { name: 'xml',  maxCount: 1 },
+]), uploadRipsJsonFile);
 
 
 

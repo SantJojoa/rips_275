@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { getUser, isAdmin } from '../lib/auth';
-import { Search, Upload, UserPlus, List, Database, ArrowLeftRight } from "lucide-react";
+import { Search, Upload, UserPlus, List, Database, ArrowLeftRight, FileStack } from "lucide-react";
 
 const MODULE_ICONS = {
     Database: { bg: '#EDF3EC', color: '#346538' },
@@ -9,6 +9,7 @@ const MODULE_ICONS = {
     Upload: { bg: '#EDF3EC', color: '#346538' },
     List: { bg: '#FDEBEC', color: '#9F2F2D' },
     UserPlus: { bg: '#FBF3DB', color: '#956400' },
+    FileStack: { bg: '#F3EEFE', color: '#7C3AED' },
 };
 
 function ModuleCard({ title, description, icon: Icon, action, iconName }) {
@@ -88,22 +89,24 @@ export default function Dashboard() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Section title="Conexion Ministerio" icon={Database} iconName="Database">
-                    <ModuleCard
-                        title="Consultar CUV"
-                        description="Consulta el CUV en la base de datos del Ministerio de Salud."
-                        icon={Database}
-                        iconName="Database"
-                        action={() => navigate('/consultar-cuv')}
-                    />
-                    <ModuleCard
-                        title="Comparar CUV y XML"
-                        description="Compara el Total Valor Servicios del CUV con el PayableAmount del XML."
-                        icon={ArrowLeftRight}
-                        iconName="ArrowLeftRight"
-                        action={() => navigate('/comparar-cuv-xml')}
-                    />
-                </Section>
+                {admin && (
+                    <Section title="Conexion Ministerio" icon={Database} iconName="Database">
+                        <ModuleCard
+                            title="Consultar CUV"
+                            description="Consulta el CUV en la base de datos del Ministerio de Salud."
+                            icon={Database}
+                            iconName="Database"
+                            action={() => navigate('/consultar-cuv')}
+                        />
+                        <ModuleCard
+                            title="Comparar CUV y XML"
+                            description="Compara el Total Valor Servicios del CUV con el PayableAmount del XML."
+                            icon={ArrowLeftRight}
+                            iconName="ArrowLeftRight"
+                            action={() => navigate('/comparar-cuv-xml')}
+                        />
+                    </Section>
+                )}
 
                 <Section
                     title={admin ? 'Subir Informacion' : 'Consultar Informacion'}
@@ -124,6 +127,15 @@ export default function Dashboard() {
                             icon={Upload}
                             iconName="Upload"
                             action={() => navigate('/upload-json')}
+                        />
+                    )}
+                    {!admin && (
+                        <ModuleCard
+                            title="Cargar Factura"
+                            description="Sube CUV, RIP y XML y valida que correspondan a la misma factura."
+                            icon={FileStack}
+                            iconName="FileStack"
+                            action={() => navigate('/cargar-factura')}
                         />
                     )}
                 </Section>

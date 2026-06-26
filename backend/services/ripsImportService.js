@@ -37,9 +37,15 @@ export class RipsImportService {
         const existingTransaction = await Transaccion.findOne({
             where: {
                 num_nit: parseInt(String(nit), 10),
-                num_factura: String(numFactura)
+                num_factura: String(numFactura),
             },
-            transaction
+            include: [{
+                model: Control,
+                as: 'Control',
+                where: { status: 'ACT' },
+                required: true,
+            }],
+            transaction,
         });
 
         if (existingTransaction) {

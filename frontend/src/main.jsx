@@ -17,6 +17,7 @@ import ListBills from './pages/ListBills.jsx'
 import CreateUser from './pages/CreateUser.jsx'
 import SearchCuv from './pages/SearchCuv.jsx'
 import CompareCuvXml from './pages/CompareCuvXml.jsx'
+import CargarFactura from './pages/CargarFactura.jsx'
 
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -54,6 +55,7 @@ createRoot(document.getElementById('root')).render(
         <Route path="/consultar-cuv" element={withPrivateLayout(<SearchCuv />)} />
         <Route path="/comparar-cuv-xml" element={withPrivateLayout(<CompareCuvXml />)} />
         <Route path="/gestionar-facturas" element={withPrivateLayout(<ListBills />)} />
+        <Route path="/cargar-factura" element={withPrivateLayout(<CargarFactura />)} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
