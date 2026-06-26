@@ -88,79 +88,93 @@ export default function Dashboard() {
                 </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {admin && (
+            {/* Vista USER — dos tarjetas grandes centradas */}
+            {!admin && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 560, margin: '0 auto' }}>
+                    {[
+                        {
+                            title: 'Cargar Factura',
+                            description: 'Sube los archivos CUV, RIP y XML, valida que correspondan a la misma factura y regístrala en el sistema.',
+                            icon: FileStack,
+                            iconName: 'FileStack',
+                            path: '/cargar-factura',
+                        },
+                        {
+                            title: 'Mis Registros',
+                            description: 'Consulta el historial de facturas que has subido, revisa los resúmenes y descarga los archivos adjuntos.',
+                            icon: Search,
+                            iconName: 'Search',
+                            path: '/consultar',
+                        },
+                    ].map(({ title, description, icon: Icon, iconName, path }) => {
+                        const palette = MODULE_ICONS[iconName] || { bg: '#F7F6F3', color: '#787774' };
+                        return (
+                            <button
+                                key={path}
+                                onClick={() => navigate(path)}
+                                style={{
+                                    border: '1px solid #EAEAEA',
+                                    borderRadius: 12,
+                                    backgroundColor: '#ffffff',
+                                    padding: '28px 32px',
+                                    cursor: 'pointer',
+                                    textAlign: 'left',
+                                    display: 'flex',
+                                    alignItems: 'flex-start',
+                                    gap: 20,
+                                    transition: 'box-shadow 200ms, transform 150ms, border-color 200ms',
+                                }}
+                                onMouseEnter={e => {
+                                    e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.08)';
+                                    e.currentTarget.style.transform = 'translateY(-2px)';
+                                    e.currentTarget.style.borderColor = '#D0D0CE';
+                                }}
+                                onMouseLeave={e => {
+                                    e.currentTarget.style.boxShadow = 'none';
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                    e.currentTarget.style.borderColor = '#EAEAEA';
+                                }}
+                                onMouseDown={e => { e.currentTarget.style.transform = 'scale(0.99)'; }}
+                                onMouseUp={e => { e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                            >
+                                <div style={{
+                                    width: 48, height: 48, borderRadius: 10, flexShrink: 0,
+                                    backgroundColor: palette.bg,
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                }}>
+                                    <Icon style={{ color: palette.color, width: 22, height: 22 }} strokeWidth={1.5} />
+                                </div>
+                                <div>
+                                    <p style={{ fontSize: 15, fontWeight: 600, color: '#111111', marginBottom: 4 }}>{title}</p>
+                                    <p style={{ fontSize: 13, color: '#787774', lineHeight: 1.55 }}>{description}</p>
+                                </div>
+                            </button>
+                        );
+                    })}
+                </div>
+            )}
+
+            {/* Vista ADMIN */}
+            {admin && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Section title="Conexion Ministerio" icon={Database} iconName="Database">
-                        <ModuleCard
-                            title="Consultar CUV"
-                            description="Consulta el CUV en la base de datos del Ministerio de Salud."
-                            icon={Database}
-                            iconName="Database"
-                            action={() => navigate('/consultar-cuv')}
-                        />
-                        <ModuleCard
-                            title="Comparar CUV y XML"
-                            description="Compara el Total Valor Servicios del CUV con el PayableAmount del XML."
-                            icon={ArrowLeftRight}
-                            iconName="ArrowLeftRight"
-                            action={() => navigate('/comparar-cuv-xml')}
-                        />
+                        <ModuleCard title="Consultar CUV" description="Consulta el CUV en la base de datos del Ministerio de Salud." icon={Database} iconName="Database" action={() => navigate('/consultar-cuv')} />
+                        <ModuleCard title="Comparar CUV y XML" description="Compara el Total Valor Servicios del CUV con el PayableAmount del XML." icon={ArrowLeftRight} iconName="ArrowLeftRight" action={() => navigate('/comparar-cuv-xml')} />
                     </Section>
-                )}
 
-                <Section
-                    title={admin ? 'Subir Informacion' : 'Consultar Informacion'}
-                    icon={admin ? Upload : Search}
-                    iconName={admin ? 'Upload' : 'Search'}
-                >
-                    <ModuleCard
-                        title="Consultar registros"
-                        description="Busca y revisa registros existentes."
-                        icon={Search}
-                        iconName="Search"
-                        action={() => navigate('/consultar')}
-                    />
-                    {admin && (
-                        <ModuleCard
-                            title="Subir JSON"
-                            description="Carga archivos RIPS en formato JSON."
-                            icon={Upload}
-                            iconName="Upload"
-                            action={() => navigate('/upload-json')}
-                        />
-                    )}
-                    {!admin && (
-                        <ModuleCard
-                            title="Cargar Factura"
-                            description="Sube CUV, RIP y XML y valida que correspondan a la misma factura."
-                            icon={FileStack}
-                            iconName="FileStack"
-                            action={() => navigate('/cargar-factura')}
-                        />
-                    )}
-                </Section>
+                    <Section title="Subir Informacion" icon={Upload} iconName="Upload">
+                        <ModuleCard title="Consultar registros" description="Busca y revisa registros existentes." icon={Search} iconName="Search" action={() => navigate('/consultar')} />
+                        <ModuleCard title="Subir JSON" description="Carga archivos RIPS en formato JSON." icon={Upload} iconName="Upload" action={() => navigate('/upload-json')} />
+                    </Section>
 
-                {admin && (
                     <div className="md:col-span-2">
                         <Section title="Administrar" icon={UserPlus} iconName="UserPlus">
-                            <ModuleCard
-                                title="Gestionar facturas"
-                                description="Listar y gestionar facturas del sistema."
-                                icon={List}
-                                iconName="List"
-                                action={() => navigate('/gestionar-facturas')}
-                            />
-                            <ModuleCard
-                                title="Crear Usuario"
-                                description="Crea nuevos usuarios para el sistema."
-                                icon={UserPlus}
-                                iconName="UserPlus"
-                                action={() => navigate('/crear-usuario')}
-                            />
+                            <ModuleCard title="Gestionar facturas" description="Listar y gestionar facturas del sistema." icon={List} iconName="List" action={() => navigate('/gestionar-facturas')} />
+                            <ModuleCard title="Crear Usuario" description="Crea nuevos usuarios para el sistema." icon={UserPlus} iconName="UserPlus" action={() => navigate('/crear-usuario')} />
                         </Section>
                     </div>
-                )}
-            </div>
+                </div>
+            )}
         </div>
     );
 }

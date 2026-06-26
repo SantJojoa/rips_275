@@ -18,10 +18,9 @@ export default function Header() {
     const roleLabel = user?.role === 'ADMIN' ? 'Admin' : 'Usuario';
 
     return (
-        <header style={{ borderBottom: '1px solid #EAEAEA', backgroundColor: '#ffffff' }}
-            className="sticky top-0 z-30 flex items-center justify-between px-6"
-            css={{ height: '64px' }}>
-            <div style={{ height: '64px' }} className="flex items-center gap-3 w-full justify-between">
+        <header style={{ borderBottom: '1px solid #EAEAEA', backgroundColor: '#ffffff', height: '64px' }}
+            className="sticky top-0 z-30 flex items-center justify-between px-6">
+            <div className="flex items-center gap-3 w-full justify-between">
                 {/* Brand */}
                 <div className="flex items-center gap-3">
                     <img
