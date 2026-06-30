@@ -1,7 +1,7 @@
 import { getToken, clearToken, isTokenExpired } from './auth';
 
 export async function apiFetch(path, options = {}) {
-    const baseURL = import.meta.env.VITE_API_URL;
+    const baseURL = import.meta.env.VITE_API_URL || '';
     const fullPath = path.startsWith('http') ? path : `${baseURL}${path}`;
 
     const headers = { ...options.headers || {} };

@@ -1,49 +1,56 @@
+networks:
+  rips-net:
+    driver: bridge
+  fevrips-net:
+    external: true
+
+volumes:
+  postgres_data:
+
 services:
   postgres:
     image: postgres:17
-    container_name: fevrips_postgres
+    container_name: rips-db
     restart: always
     environment:
-      POSTGRES_USER: sistemas
-      POSTGRES_PASSWORD: FEVRIPSidsn*
-      POSTGRES_DB: rips_2275
-    ports:
-      - "5432:5432"
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_DATABASE}
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./backup.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - rips-net
 
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     image: rips_275-backend:latest
-    container_name: fevrips_backend
+    container_name: rips-backend
     restart: always
     depends_on:
       - postgres
+    env_file:
+      - .env
     environment:
-      DB_HOST: postgres
-      DB_USERNAME: sistemas
-      DB_PASSWORD: FEVRIPSidsn*
-      DB_DATABASE: rips_2275
-      DB_PORT: 5432
-      JWT_SECRET: tokenpassword*@
-      CUV_API_URL: https://172.16.4.7:9443
-      NODE_TLS_REJECT_UNAUTHORIZED: "0"
-    ports:
-      - "3000:3000"
+      DB_HOST: rips-db
+    networks:
+      - rips-net
+      - fevrips-net
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ""
     image: rips_275-frontend:latest
-    container_name: fevrips_frontend
+    container_name: rips-frontend
     restart: always
     depends_on:
       - backend
     ports:
-      - "5173:5173"
-volumes:
-  postgres_data:
+      - "80:80"
+    networks:
+      - rips-net
