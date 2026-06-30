@@ -3,6 +3,7 @@ networks:
     driver: bridge
   fevrips-net:
     external: true
+    name: app_fevrips-net
 
 volumes:
   postgres_data:
