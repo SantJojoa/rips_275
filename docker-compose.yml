@@ -7,6 +7,7 @@ networks:
 
 volumes:
   postgres_data:
+  uploads_data:
 
 services:
   postgres:
@@ -42,6 +43,8 @@ services:
       - .env
     environment:
       DB_HOST: rips-db
+    volumes:
+      - uploads_data:/app/uploads
     networks:
       - rips-net
       - fevrips-net
