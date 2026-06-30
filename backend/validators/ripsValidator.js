@@ -27,7 +27,8 @@ export class RipsValidator {
             nit: numDocumentoIdObligado,
             numFactura,
             tipoNota: ripsData.tipoNota ?? '',
-            numNota: ripsData.numNota ?? ''
+            numNota:  ripsData.numNota  ?? '',
+            valorFactura: null, // se sobreescribe en processRipsImport si viene del request
         };
     }
 

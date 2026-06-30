@@ -156,15 +156,15 @@ export default function SearchCuv() {
     };
 
     return (
-        <div className="py-6">
+        <div className="fade-up fade-up-1">
             <div className="mb-6">
-                <h1 className="text-3xl font-bold text-slate-800 mb-1">Consultar CUV</h1>
-                <p className="text-slate-500">Ingresa el código CUV o arrastra un archivo JSON</p>
+                <h1 className="text-xl font-semibold text-[#111111] tracking-tight">Consultar CUV</h1>
+                <p className="mt-1 text-sm text-[#787774]">Ingresa el codigo CUV o arrastra un archivo JSON.</p>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-5 mb-6">
+            <div className="grid md:grid-cols-2 gap-4 mb-6">
                 {/* Formulario de búsqueda */}
-                <div className="bg-white rounded-2xl border border-slate-200 p-6 flex flex-col justify-center">
+                <div style={{ border: '1px solid #EAEAEA', borderRadius: '8px', backgroundColor: '#ffffff' }} className="p-5 flex flex-col justify-center">
                     <label htmlFor="cuv" className="block text-base font-semibold text-slate-700 mb-3">
                         Código CUV
                     </label>

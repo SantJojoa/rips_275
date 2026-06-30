@@ -1,25 +1,86 @@
 import fs from 'fs';
+import path from 'path';
+import db from '../models/index.js';
 import { RipsImportService } from '../services/ripsImportService.js';
 import { RipsValidator } from '../validators/ripsValidator.js';
 import { handleControllerError } from '../utils/errorHandler.js';
 
+// Mueve un archivo temporal a destino y devuelve la ruta final.
+function moveFile(src, dest) {
+    fs.mkdirSync(path.dirname(dest), { recursive: true });
+    try {
+        fs.renameSync(src, dest);
+    } catch {
+        // renameSync falla entre particiones; fallback a copy+unlink
+        fs.copyFileSync(src, dest);
+        fs.unlinkSync(src);
+    }
+    return dest;
+}
 
 export const uploadRipsJsonFile = async (req, res) => {
+    // Acepta campo 'file' (admin legacy) o 'rip' (usuario con 3 archivos)
+    const ripFile = req.files?.rip?.[0] || req.files?.file?.[0] || req.file || null;
+    const cuvFile = req.files?.cuv?.[0] || null;
+    const xmlFile = req.files?.xml?.[0] || null;
+
+    if (!ripFile) {
+        return res.status(400).json({ message: 'Falta archivo RIPS' });
+    }
+
     try {
-        if (!req.file) {
-            return res.status(400).json({ message: 'Falta archivo RIPS' });
+        const dataObj = RipsValidator.parseJsonFile(ripFile.path);
+
+        const { id: id_system_user } = req.user || {};
+        const { prestadorId, periodo_fac, anio, status, valorFactura } = req.body;
+
+        // Importar a BD con ruta temporal; la actualizamos luego con la carpeta real
+        const result = await RipsImportService.processRipsImport({
+            id_system_user,
+            id_prestador: prestadorId,
+            periodo_fac,
+            anio,
+            status,
+            route: ripFile.path,
+            ripsData: dataObj,
+            valorFactura: valorFactura != null ? parseFloat(valorFactura) : null,
+        });
+
+        // ── Organizar archivos ────────────────────────────────────────────────
+        const numFactura = String(dataObj.numFactura || dataObj.NumFactura || 'SIN_FACTURA')
+            .replace(/[/\\:*?"<>|]/g, '_'); // sanear para nombre de carpeta
+        const radicado  = String(result.radicado).replace(/[/\\:*?"<>|]/g, '_');
+        const baseName  = `${numFactura}_${radicado}`;
+        const folderPath = path.join('uploads', baseName);
+
+        fs.mkdirSync(folderPath, { recursive: true });
+
+        const ripExt = path.extname(ripFile.originalname) || '.json';
+        moveFile(ripFile.path, path.join(folderPath, `${baseName}_RIP${ripExt}`));
+
+        if (cuvFile) {
+            const cuvExt = path.extname(cuvFile.originalname) || '.json';
+            moveFile(cuvFile.path, path.join(folderPath, `${baseName}_CUV${cuvExt}`));
         }
 
-        const dataObj = RipsValidator.parseJsonFile(req.file.path);
+        if (xmlFile) {
+            moveFile(xmlFile.path, path.join(folderPath, `${baseName}_XML.xml`));
+        }
 
-        req.body = {
-            ...req.body,
-            data: dataObj,
-            route: req.file.path
-        };
+        // Actualizar route en control con la carpeta real
+        await db.Control.update({ route: folderPath }, { where: { id: result.controlId } });
 
-        return uploadRipsJson(req, res);
+        return res.status(201).json({
+            message: 'Carga realizada correctamente',
+            ...result,
+        });
     } catch (error) {
+        // Limpiar archivos temporales si algo falló
+        [ripFile, cuvFile, xmlFile].forEach(f => {
+            if (f?.path && fs.existsSync(f.path)) {
+                try { fs.unlinkSync(f.path); } catch { /* ignorar */ }
+            }
+        });
         handleControllerError(res, error);
     }
 };
@@ -49,12 +110,12 @@ export const uploadRipsJson = async (req, res) => {
             anio,
             status,
             route,
-            ripsData
+            ripsData,
         });
 
         return res.status(201).json({
             message: 'Carga realizada correctamente',
-            ...result
+            ...result,
         });
     } catch (error) {
         handleControllerError(res, error);

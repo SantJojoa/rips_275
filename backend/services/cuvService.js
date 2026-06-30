@@ -36,7 +36,7 @@ export class CuvService {
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    httpAgent: this.createHttpsAgent(),
+                    httpsAgent: this.createHttpsAgent(),
                     timeout
                 }
             );

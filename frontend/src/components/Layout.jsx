@@ -16,14 +16,14 @@ export default function Layout({ children }) {
         };
 
         checkToken();
-        const interval = setInterval(checkToken, 60000); // Check every minute
+        const interval = setInterval(checkToken, 60000);
         return () => clearInterval(interval);
     }, [navigate]);
 
     return (
-        <div className="min-h-dvh bg-gradient-to-br from-slate-50 to-slate-100">
+        <div className="min-h-dvh" style={{ backgroundColor: '#FBFBFA' }}>
             <Header />
-            <main className="px-8 py-6">
+            <main className="max-w-7xl mx-auto px-6 py-8">
                 {children}
             </main>
         </div>

@@ -29,18 +29,9 @@ export default (sequelize, DataTypes) => {
     paranoid: false,
     underscored: false,
     hooks: {
-      beforeCreate: (control, options) => {
-        // Inicializa vacío; se definirá luego con id real
+      beforeCreate: (control) => {
         control.numero_radicado = null;
       },
-      afterCreate: async (control, options) => {
-        console.log('[HOOK] Ejecutando afterCreate para control ID:', control.id);
-        const year = control.createdAt ? new Date(control.createdAt).getFullYear() : new Date().getFullYear();
-        const numero = `${year}-${control.id}`;
-        console.log('[HOOK] Generando numero_radicado:', numero);
-        await control.update({ numero_radicado: numero }, { transaction: options.transaction });
-        console.log('[HOOK] numero_radicado actualizado correctamente');
-      }
     }
   });
   return Control;

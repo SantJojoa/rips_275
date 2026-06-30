@@ -7,8 +7,12 @@ import db from './models/index.js';
 
 
 const app = express();
+const allowedOrigins = process.env.CORS_ORIGINS
+    ? process.env.CORS_ORIGINS.split(',')
+    : ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:3001'];
+
 app.use(cors({
-    origin: ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:3001'],
+    origin: allowedOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
@@ -16,9 +20,8 @@ app.use(cors({
 
 app.use(express.json());
 
-if (process.env.NODE_ENV !== 'production') {
-    process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-    console.log('⚠️  Verificación SSL deshabilitada (solo desarrollo)');
+if (process.env.NODE_TLS_REJECT_UNAUTHORIZED === '0') {
+    console.log('⚠️  Verificación SSL deshabilitada');
 }
 
 // Rutas de autenticación (incluyen rutas de importación RIPS)
