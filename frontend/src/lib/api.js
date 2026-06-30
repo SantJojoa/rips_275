@@ -24,7 +24,8 @@ export async function apiFetch(path, options = {}) {
     const res = await fetch(fullPath, { ...options, headers });
 
 
-    if (res.status === 401) {
+    // Solo redirigir si había un token (sesión expirada), no en el flujo de login
+    if (res.status === 401 && token) {
         clearToken();
         window.location.href = '/login';
     }

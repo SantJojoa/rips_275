@@ -7,7 +7,7 @@ import {
     hardDeleteBill,
     getBillsStats
 } from '../controllers/billController.js';
-import { authenticate, authorize } from '../middlewares/auth.js';
+import { authenticate, authorize, authorizeSuperAdmin } from '../middlewares/auth.js';
 
 const router = express.Router();
 
@@ -45,13 +45,13 @@ router.put('/:id', authenticate, authorize, updateBill);
  * @desc    Desactivar una factura (soft delete)
  * @access  Private/Admin
  */
-router.delete('/:id', authenticate, authorize, deleteBill);
+router.delete('/:id', authenticate, authorizeSuperAdmin, deleteBill);
 
 /**
  * @route   DELETE /api/bills/:id/hard
  * @desc    Eliminar permanentemente una factura (hard delete)
- * @access  Private/Admin
+ * @access  Private/SuperAdmin
  */
-router.delete('/:id/hard', authenticate, authorize, hardDeleteBill);
+router.delete('/:id/hard', authenticate, authorizeSuperAdmin, hardDeleteBill);
 
 export default router;

@@ -20,7 +20,7 @@ const SystemUser = sequelize.define('SystemUser', {
     apellidos: DataTypes.STRING,
     cedula: DataTypes.STRING,
     password: DataTypes.STRING,
-    role: DataTypes.ENUM('ADMIN', 'USER'),
+    role: DataTypes.ENUM('SUPERADMIN', 'ADMIN', 'USER'),
 }, {
     tableName: 'system_users',
     timestamps: true,
@@ -28,32 +28,43 @@ const SystemUser = sequelize.define('SystemUser', {
     underscored: true,
 });
 
+const USERS = [
+    {
+        username: 'superadmin',
+        nombres: 'Super',
+        apellidos: 'Administrador',
+        cedula: '0000000001',
+        password: 'superadmin123',
+        role: 'SUPERADMIN',
+    },
+    {
+        username: 'admin',
+        nombres: 'Administrador',
+        apellidos: 'Sistema',
+        cedula: '0000000000',
+        password: 'admin123',
+        role: 'ADMIN',
+    },
+];
+
 async function seed() {
     try {
         await sequelize.authenticate();
 
-        const existing = await SystemUser.findOne({ where: { username: 'admin' } });
-        if (existing) {
-            console.log('⚠️  Ya existe un usuario admin, no se creó otro.');
-            return;
+        for (const user of USERS) {
+            const existing = await SystemUser.findOne({ where: { username: user.username } });
+            if (existing) {
+                console.log(`⚠️  Ya existe: ${user.username} — omitido.`);
+                continue;
+            }
+            const hashed = await bcrypt.hash(user.password, 10);
+            await SystemUser.create({ ...user, password: hashed });
+            console.log(`✅ Creado: ${user.username} (${user.role}) — password: ${user.password}`);
         }
 
-        const hashedPassword = await bcrypt.hash('admin123', 10);
-        await SystemUser.create({
-            username: 'admin',
-            nombres: 'Administrador',
-            apellidos: 'Sistema',
-            cedula: '0000000000',
-            password: hashedPassword,
-            role: 'ADMIN',
-        });
-
-        console.log('✅ Usuario admin creado exitosamente.');
-        console.log('   Username: admin');
-        console.log('   Password: admin123');
-        console.log('   ⚠️  Cambia la contraseña después de iniciar sesión.');
+        console.log('   ⚠️  Cambia las contraseñas después de iniciar sesión.');
     } catch (error) {
-        console.error('❌ Error al crear el admin:', error.message);
+        console.error('❌ Error:', error.message);
     } finally {
         await sequelize.close();
     }

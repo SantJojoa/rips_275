@@ -18,7 +18,7 @@ export default (sequelize, DataTypes) => {
     apellidos: DataTypes.STRING,
     cedula: DataTypes.STRING,
     password: DataTypes.STRING,
-    role: DataTypes.ENUM('ADMIN', 'USER')
+    role: DataTypes.ENUM('SUPERADMIN', 'ADMIN', 'USER')
   }, {
     sequelize,
     modelName: 'SystemUser',

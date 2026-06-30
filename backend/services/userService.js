@@ -6,7 +6,7 @@ import { generateToken } from "../utils/jwt.js";
 const { SystemUser } = db;
 
 export const createUserService = async (data, creatorRole) => {
-    if (creatorRole !== 'ADMIN') throw { status: 403, message: 'Acceso denegado' };
+    if (creatorRole !== 'SUPERADMIN') throw { status: 403, message: 'Acceso denegado: solo SUPERADMIN puede crear usuarios' };
 
     const { username, nombres, apellidos, cedula, password, role = "USER" } = data;
 

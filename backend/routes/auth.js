@@ -1,6 +1,6 @@
 import express from "express"
 import { login, getProfile, createUser } from '../controllers/authController.js'
-import { authenticate, authorize } from '../middlewares/auth.js'
+import { authenticate, authorize, authorizeSuperAdmin } from '../middlewares/auth.js'
 import { uploadRipsJson, uploadRipsJsonFile } from '../controllers/importController.js'
 import { searchByFactura, consultarCUV, compareCuvXml, compareCuvXmlBatch } from '../controllers/queryControllers.js'
 import db from '../models/index.js';
@@ -15,7 +15,7 @@ const router = express.Router()
 
 router.post('/login', login);
 router.get('/profile', authenticate, getProfile);
-router.post('/create-user', authenticate, authorize, createUser);
+router.post('/create-user', authenticate, authorizeSuperAdmin, createUser);
 
 
 

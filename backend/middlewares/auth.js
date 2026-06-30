@@ -39,12 +39,31 @@ export const authorize = (req, res, next) => {
         }
         const userRole = normalizeRole(req.user.role);
 
-        if (userRole !== 'ADMIN') {
+        if (userRole !== 'ADMIN' && userRole !== 'SUPERADMIN') {
             return res.status(403).json({
-                message: 'Acceso denegado: se requiere rol ADMIN'
+                message: 'Acceso denegado: se requiere rol ADMIN o SUPERADMIN'
             });
         }
 
+        next();
+    } catch (error) {
+        return res.status(500).json({
+            message: 'Error al verificar autorización',
+            error: process.env.NODE_ENV === 'development' ? error : undefined
+        });
+    }
+};
+
+export const authorizeSuperAdmin = (req, res, next) => {
+    try {
+        if (!req.user) {
+            return res.status(401).json({ message: 'Usuario no autenticado' });
+        }
+        if (normalizeRole(req.user.role) !== 'SUPERADMIN') {
+            return res.status(403).json({
+                message: 'Acceso denegado: se requiere rol SUPERADMIN'
+            });
+        }
         next();
     } catch (error) {
         return res.status(500).json({

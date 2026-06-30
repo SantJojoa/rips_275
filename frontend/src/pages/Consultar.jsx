@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Search, Download, FileJson, FileText, FileCode, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
 import Select from 'react-select';
 import { isAdmin } from '../lib/auth';
@@ -10,7 +11,8 @@ import { showError, showSuccess } from '../utils/toastUtils';
 
 // ─── Componente vista ADMIN (búsqueda por factura) ───────────────────────────
 function ConsultarAdmin() {
-    const [numFactura, setNumFactura] = useState('');
+    const [searchParams, setSearchParams] = useSearchParams();
+    const [numFactura, setNumFactura] = useState(searchParams.get('factura') || '');
     const [loading, setLoading]       = useState(false);
     const [data, setData]             = useState(null);
     const [activeTab, setActiveTab]   = useState('consultas');
@@ -27,10 +29,12 @@ function ConsultarAdmin() {
         { id: 'otrosServicios',   label: 'Otros Servicios' },
     ];
 
-    const buscarFactura = async (userId = null) => {
+    const buscarFactura = useCallback(async (userId = null, numOverride = null) => {
+        const num = numOverride ?? numFactura;
+        if (!num.trim()) return;
         try {
             setLoading(true);
-            const result = await SearchBill(numFactura, userId);
+            const result = await SearchBill(num, userId);
             if (!userId) setData(result);
             else setData(prev => ({ ...result, users: prev?.users || result.users || [] }));
             setSelectedUserId(userId);
@@ -41,7 +45,17 @@ function ConsultarAdmin() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [numFactura]);
+
+    // Auto-buscar si viene el parámetro ?factura= en la URL
+    useEffect(() => {
+        const facturaParam = searchParams.get('factura');
+        if (facturaParam) {
+            setNumFactura(facturaParam);
+            buscarFactura(null, facturaParam);
+            setSearchParams({}, { replace: true });
+        }
+    }, []);
 
     return (
         <>

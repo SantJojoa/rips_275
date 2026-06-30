@@ -26,7 +26,7 @@ export default function UploadJson() {
     const [prestadorId,   setPrestadorId]   = useState('');
     const [prestadorText, setPrestadorText] = useState('');
     const [periodoFac,    setPeriodoFac]    = useState('');
-    const [anio,          setAnio]          = useState('');
+    const [anio,          setAnio]          = useState(2026);
     const [file,          setFile]          = useState(null);
     const [jsonText,      setJsonText]      = useState('');
     const [loading,       setLoading]       = useState(false);

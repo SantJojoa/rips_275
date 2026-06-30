@@ -1,20 +1,17 @@
 import { useNavigate } from 'react-router-dom';
-import { getUser, isAdmin } from '../lib/auth';
-import { Search, Upload, UserPlus, List, Database, ArrowLeftRight, FileStack } from "lucide-react";
+import { getUser, isAdmin, isSuperAdmin } from '../lib/auth';
+import { Search, UserPlus, List, Database, FileStack } from "lucide-react";
 
 const MODULE_ICONS = {
-    Database: { bg: '#EDF3EC', color: '#346538' },
-    ArrowLeftRight: { bg: '#E1F3FE', color: '#1F6C9F' },
-    Search: { bg: '#E1F3FE', color: '#1F6C9F' },
-    Upload: { bg: '#EDF3EC', color: '#346538' },
-    List: { bg: '#FDEBEC', color: '#9F2F2D' },
-    UserPlus: { bg: '#FBF3DB', color: '#956400' },
+    Database:  { bg: '#EDF3EC', color: '#346538' },
+    Search:    { bg: '#E1F3FE', color: '#1F6C9F' },
+    UserPlus:  { bg: '#FBF3DB', color: '#956400' },
+    List:      { bg: '#F3EEFE', color: '#7C3AED' },
     FileStack: { bg: '#F3EEFE', color: '#7C3AED' },
 };
 
 function ModuleCard({ title, description, icon: Icon, action, iconName }) {
     const palette = MODULE_ICONS[iconName] || { bg: '#F7F6F3', color: '#787774' };
-
     return (
         <button
             onClick={action}
@@ -36,14 +33,7 @@ function ModuleCard({ title, description, icon: Icon, action, iconName }) {
             onMouseUp={e => { e.currentTarget.style.transform = 'translateY(-1px)'; }}
             className="group text-left flex flex-col gap-3 p-5 w-full cursor-pointer"
         >
-            <div
-                style={{
-                    width: '36px', height: '36px',
-                    borderRadius: '8px',
-                    backgroundColor: palette.bg,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}
-            >
+            <div style={{ width: '36px', height: '36px', borderRadius: '8px', backgroundColor: palette.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Icon style={{ color: palette.color }} className="w-4 h-4" strokeWidth={1.5} />
             </div>
             <div>
@@ -57,8 +47,7 @@ function ModuleCard({ title, description, icon: Icon, action, iconName }) {
 function Section({ title, icon: Icon, iconName, children }) {
     const palette = MODULE_ICONS[iconName] || { color: '#787774' };
     return (
-        <div style={{ border: '1px solid #EAEAEA', borderRadius: '8px', backgroundColor: '#F9F9F8' }}
-            className="p-5">
+        <div style={{ border: '1px solid #EAEAEA', borderRadius: '8px', backgroundColor: '#F9F9F8' }} className="p-5">
             <div className="flex items-center gap-2 mb-4">
                 <Icon style={{ color: palette.color }} className="w-4 h-4" strokeWidth={1.5} />
                 <h2 className="text-sm font-semibold text-[#111111]">{title}</h2>
@@ -74,6 +63,7 @@ export default function Dashboard() {
     const navigate = useNavigate();
     const user = getUser();
     const admin = isAdmin();
+    const superAdmin = isSuperAdmin();
 
     const displayName = user?.nombres?.trim() ? user.nombres : user?.username;
 
@@ -83,12 +73,10 @@ export default function Dashboard() {
                 <h1 className="text-xl font-semibold text-[#111111] tracking-tight">
                     Bienvenido, <span style={{ color: '#462882' }}>{displayName}</span>
                 </h1>
-                <p className="mt-1 text-sm text-[#787774]">
-                    Panel de control del Sistema FEV-RIPS
-                </p>
+                <p className="mt-1 text-sm text-[#787774]">Panel de control del Sistema FEV-RIPS</p>
             </div>
 
-            {/* Vista USER — dos tarjetas grandes centradas */}
+            {/* Vista USER */}
             {!admin && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 560, margin: '0 auto' }}>
                     {[
@@ -113,15 +101,9 @@ export default function Dashboard() {
                                 key={path}
                                 onClick={() => navigate(path)}
                                 style={{
-                                    border: '1px solid #EAEAEA',
-                                    borderRadius: 12,
-                                    backgroundColor: '#ffffff',
-                                    padding: '28px 32px',
-                                    cursor: 'pointer',
-                                    textAlign: 'left',
-                                    display: 'flex',
-                                    alignItems: 'flex-start',
-                                    gap: 20,
+                                    border: '1px solid #EAEAEA', borderRadius: 12, backgroundColor: '#ffffff',
+                                    padding: '28px 32px', cursor: 'pointer', textAlign: 'left',
+                                    display: 'flex', alignItems: 'flex-start', gap: 20,
                                     transition: 'box-shadow 200ms, transform 150ms, border-color 200ms',
                                 }}
                                 onMouseEnter={e => {
@@ -137,11 +119,7 @@ export default function Dashboard() {
                                 onMouseDown={e => { e.currentTarget.style.transform = 'scale(0.99)'; }}
                                 onMouseUp={e => { e.currentTarget.style.transform = 'translateY(-2px)'; }}
                             >
-                                <div style={{
-                                    width: 48, height: 48, borderRadius: 10, flexShrink: 0,
-                                    backgroundColor: palette.bg,
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                }}>
+                                <div style={{ width: 48, height: 48, borderRadius: 10, flexShrink: 0, backgroundColor: palette.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                     <Icon style={{ color: palette.color, width: 22, height: 22 }} strokeWidth={1.5} />
                                 </div>
                                 <div>
@@ -154,25 +132,39 @@ export default function Dashboard() {
                 </div>
             )}
 
-            {/* Vista ADMIN */}
+            {/* Vista ADMIN / SUPERADMIN */}
             {admin && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Section title="Conexion Ministerio" icon={Database} iconName="Database">
-                        <ModuleCard title="Consultar CUV" description="Consulta el CUV en la base de datos del Ministerio de Salud." icon={Database} iconName="Database" action={() => navigate('/consultar-cuv')} />
-                        <ModuleCard title="Comparar CUV y XML" description="Compara el Total Valor Servicios del CUV con el PayableAmount del XML." icon={ArrowLeftRight} iconName="ArrowLeftRight" action={() => navigate('/comparar-cuv-xml')} />
+                    <Section title="Ministerio de Salud" icon={Database} iconName="Database">
+                        <ModuleCard
+                            title="Consultar CUV"
+                            description="Consulta el CUV en la base de datos del Ministerio de Salud."
+                            icon={Database} iconName="Database"
+                            action={() => navigate('/consultar-cuv')}
+                        />
                     </Section>
 
-                    <Section title="Subir Informacion" icon={Upload} iconName="Upload">
-                        <ModuleCard title="Consultar registros" description="Busca y revisa registros existentes." icon={Search} iconName="Search" action={() => navigate('/consultar')} />
-                        <ModuleCard title="Subir JSON" description="Carga archivos RIPS en formato JSON." icon={Upload} iconName="Upload" action={() => navigate('/upload-json')} />
+                    <Section title="Facturas" icon={List} iconName="List">
+                        <ModuleCard
+                            title="Gestionar Facturas"
+                            description="Lista, busca y administra todas las facturas registradas en el sistema."
+                            icon={List} iconName="List"
+                            action={() => navigate('/gestionar-facturas')}
+                        />
                     </Section>
 
-                    <div className="md:col-span-2">
-                        <Section title="Administrar" icon={UserPlus} iconName="UserPlus">
-                            <ModuleCard title="Gestionar facturas" description="Listar y gestionar facturas del sistema." icon={List} iconName="List" action={() => navigate('/gestionar-facturas')} />
-                            <ModuleCard title="Crear Usuario" description="Crea nuevos usuarios para el sistema." icon={UserPlus} iconName="UserPlus" action={() => navigate('/crear-usuario')} />
-                        </Section>
-                    </div>
+                    {superAdmin && (
+                        <div className="md:col-span-2">
+                            <Section title="Administración" icon={UserPlus} iconName="UserPlus">
+                                <ModuleCard
+                                    title="Crear Usuario"
+                                    description="Crea nuevos usuarios para el sistema."
+                                    icon={UserPlus} iconName="UserPlus"
+                                    action={() => navigate('/crear-usuario')}
+                                />
+                            </Section>
+                        </div>
+                    )}
                 </div>
             )}
         </div>

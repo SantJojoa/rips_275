@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Trash2, ChevronDown, ChevronUp, Loader2, FileJson, FileText, FileCode, Download, RefreshCw } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Trash2, ChevronDown, ChevronUp, Loader2, FileJson, FileText, FileCode, Download, RefreshCw, Search } from 'lucide-react';
 import { apiFetch } from '../lib/api';
 import { deleteBill } from '../api/billsApi';
+import { isSuperAdmin } from '../lib/auth';
 import { createPortal } from 'react-dom';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -61,7 +63,7 @@ function ConfirmModal({ factura, onConfirm, onCancel }) {
 }
 
 // ─── Tarjeta de registro ─────────────────────────────────────────────────────
-function RegistroCard({ r, onDelete, onDescargar }) {
+function RegistroCard({ r, onDelete, onDescargar, onBuscarRips, canDelete }) {
     const [open, setOpen] = useState(false);
 
     const fecha  = new Date(r.fecha).toLocaleDateString('es-CO', { year: 'numeric', month: 'short', day: '2-digit' });
@@ -91,15 +93,24 @@ function RegistroCard({ r, onDelete, onDescargar }) {
                         {r.nombre_prestador || '—'} · Factura <span style={{ fontWeight: 600, color: '#111111' }}>{r.num_factura}</span>
                     </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
                     <span style={{ fontWeight: 700, fontSize: 14, color: '#111111' }}>{valor}</span>
                     <button
-                        onClick={e => { e.stopPropagation(); onDelete(r); }}
-                        style={{ padding: '5px', borderRadius: 6, border: '1px solid #FECACA', backgroundColor: '#FEF2F2', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
-                        title="Eliminar"
+                        onClick={e => { e.stopPropagation(); onBuscarRips(r.num_factura); }}
+                        style={{ padding: '5px', borderRadius: 6, border: '1px solid #BFDBFE', backgroundColor: '#EFF6FF', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                        title="Ver en consulta RIPS"
                     >
-                        <Trash2 style={{ width: 14, height: 14, color: '#B91C1C' }} />
+                        <Search style={{ width: 14, height: 14, color: '#1D4ED8' }} />
                     </button>
+                    {canDelete && (
+                        <button
+                            onClick={e => { e.stopPropagation(); onDelete(r); }}
+                            style={{ padding: '5px', borderRadius: 6, border: '1px solid #FECACA', backgroundColor: '#FEF2F2', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                            title="Eliminar factura"
+                        >
+                            <Trash2 style={{ width: 14, height: 14, color: '#B91C1C' }} />
+                        </button>
+                    )}
                     {open ? <ChevronUp style={{ width: 15, height: 15, color: '#787774' }} /> : <ChevronDown style={{ width: 15, height: 15, color: '#787774' }} />}
                 </div>
             </button>
@@ -165,10 +176,13 @@ function RegistroCard({ r, onDelete, onDescargar }) {
 
 // ─── Componente principal ─────────────────────────────────────────────────────
 export default function BillsTable() {
+    const navigate = useNavigate();
+    const canDelete = isSuperAdmin();
+
     const [registros,    setRegistros]    = useState([]);
     const [loading,      setLoading]      = useState(true);
     const [error,        setError]        = useState(null);
-    const [confirmando,  setConfirmando]  = useState(null); // registro a eliminar
+    const [confirmando,  setConfirmando]  = useState(null);
 
     // Filtros
     const [busqueda,     setBusqueda]     = useState('');
@@ -369,6 +383,8 @@ export default function BillsTable() {
                             r={r}
                             onDelete={setConfirmando}
                             onDescargar={handleDescargar}
+                            onBuscarRips={num => navigate(`/consultar?factura=${encodeURIComponent(num)}`)}
+                            canDelete={canDelete}
                         />
                     ))}
                 </div>

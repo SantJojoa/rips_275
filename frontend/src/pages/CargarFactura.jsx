@@ -308,7 +308,7 @@ export default function CargarFactura() {
     const [prestadores, setPrestadores] = useState([]);
     const [prestadorId, setPrestadorId] = useState('');
     const [periodoFac, setPeriodoFac] = useState('');
-    const [anio, setAnio] = useState('');
+    const [anio, setAnio] = useState(2026);
 
     useEffect(() => {
         apiFetch('/api/auth/prestadores')

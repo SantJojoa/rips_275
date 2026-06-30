@@ -47,5 +47,10 @@ export function getUser() {
 }
 
 export function isAdmin() {
-    return getUser()?.role === 'ADMIN';
+    const role = getUser()?.role;
+    return role === 'ADMIN' || role === 'SUPERADMIN';
+}
+
+export function isSuperAdmin() {
+    return getUser()?.role === 'SUPERADMIN';
 }

@@ -26,7 +26,7 @@ const SystemUser = sequelize.define('SystemUser', {
     apellidos: DataTypes.STRING,
     cedula: DataTypes.STRING,
     password: DataTypes.STRING,
-    role: DataTypes.ENUM('ADMIN', 'USER'),
+    role: DataTypes.ENUM('SUPERADMIN', 'ADMIN', 'USER'),
 }, {
     tableName: 'system_users',
     timestamps: true,
@@ -62,6 +62,14 @@ const Prestador = sequelize.define('Prestador', {
 // ─── Usuarios fijos ───────────────────────────────────────────────────────────
 
 const USERS = [
+    {
+        username: 'superadmin',
+        nombres: 'Super',
+        apellidos: 'Administrador',
+        cedula: '0000000001',
+        password: 'superadmin123',
+        role: 'SUPERADMIN',
+    },
     {
         username: 'admin',
         nombres: 'Administrador',
