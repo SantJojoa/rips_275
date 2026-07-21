@@ -38,7 +38,16 @@ const RootRedirect = () => {
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <ToastContainer />
+    <ToastContainer
+      position="top-right"
+      autoClose={4000}
+      hideProgressBar={false}
+      newestOnTop
+      closeOnClick
+      pauseOnHover
+      draggable={false}
+      theme="light"
+    />
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<RootRedirect />} />

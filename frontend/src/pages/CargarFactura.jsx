@@ -1,6 +1,6 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Upload, FileJson, FileCode, CheckCircle2, AlertCircle, XCircle, Loader2, RotateCcw, ChevronDown, ChevronUp } from 'lucide-react';
+import { Upload, FileJson, FileCode, CheckCircle2, AlertCircle, XCircle, Loader2, RotateCcw, ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react';
 import { consultarCUV } from '../services/searchBill.js';
 import { apiFetch } from '../lib/api.js';
 import { monthOptions, yearsOptions } from '../data/facturedDateOptions.js';
@@ -286,278 +286,54 @@ function Collapsible({ title, badge, badgeOk, defaultOpen = false, children }) {
     );
 }
 
-// ─── Página principal ─────────────────────────────────────────────────────────
+// ─── Tarjeta de una factura individual ────────────────────────────────────────
 
-const SELECT_STYLES = {
-    container: (b) => ({ ...b, width: '100%' }),
-    control: (b) => ({ ...b, borderRadius: 10, borderColor: '#CBD5E1', boxShadow: 'none', padding: '2px 4px' }),
-    input: (b) => ({ ...b, color: 'inherit' }),
-    menu: (b) => ({ ...b, borderRadius: 10 }),
-};
-
-export default function CargarFactura() {
-    const [files, setFiles] = useState({ cuv: null, rip: null, xml: null });
-    const [parsed, setParsed] = useState({ cuv: null, rip: null, xml: null });
-    const [loading, setLoading] = useState(false);
-    const [uploading, setUploading] = useState(false);
-    const [uploadDone, setUploadDone] = useState(false);
-    const [uploadModal, setUploadModal] = useState(null); // { radicado, fecha }
-    const [result, setResult] = useState(null);
-
-    // Período y prestador
-    const [prestadores, setPrestadores] = useState([]);
-    const [prestadorId, setPrestadorId] = useState('');
-    const [periodoFac, setPeriodoFac] = useState('');
-    const [anio, setAnio] = useState(2026);
-
-    useEffect(() => {
-        apiFetch('/api/auth/prestadores')
-            .then(r => r.json())
-            .then(data => setPrestadores(Array.isArray(data) ? data : []))
-            .catch(() => {});
-    }, []);
-
-    const prestadorOptions = prestadores.map(p => ({
-        value: String(p.id),
-        label: `${p.id} - ${p.nombre}${p.nit ? ' • NIT: ' + p.nit : ''}${p.cod ? ' (' + p.cod + ')' : ''}`,
-    }));
-    const selectedPrestador = prestadorOptions.find(o => o.value === String(prestadorId)) || null;
-
+function InvoiceItemCard({ index, item, canRemove, onFile, onClear, onValidar, onSubir, onRemove }) {
+    const { files, parsed, loading, uploading, uploaded, uploadInfo, result } = item;
     const allLoaded = files.cuv && files.rip && files.xml;
 
-    const handleFile = useCallback(async (slot, file) => {
-        const text = await file.text();
-        let data = null;
-
-        if (slot === 'cuv') {
-            const cuv = extractCuvFromText(text);
-            const factura = extractFacturaFromCuv(text);
-            data = { cuv, factura, text };
-            if (!cuv) {
-                toast.error('No se encontró CodigoUnicoValidacion en el archivo CUV');
-                return;
-            }
-        } else if (slot === 'rip') {
-            data = extractFromRip(text);
-        } else if (slot === 'xml') {
-            data = extractFromXml(text);
-        }
-
-        setFiles(prev => ({ ...prev, [slot]: file }));
-        setParsed(prev => ({ ...prev, [slot]: data }));
-        setResult(null);
-    }, []);
-
-    const handleClear = useCallback((slot) => {
-        setFiles(prev => ({ ...prev, [slot]: null }));
-        setParsed(prev => ({ ...prev, [slot]: null }));
-        setResult(null);
-    }, []);
-
-    const handleReset = () => {
-        setFiles({ cuv: null, rip: null, xml: null });
-        setParsed({ cuv: null, rip: null, xml: null });
-        setResult(null);
-    };
-
-    const handleSubir = async () => {
-        if (!prestadorId) return toast.error('Seleccione un prestador');
-        if (!periodoFac) return toast.error('Seleccione el mes de facturación');
-        if (!anio) return toast.error('Seleccione el año de facturación');
-
-        setUploading(true);
-        try {
-            const fd = new FormData();
-            fd.append('rip', files.rip);
-            fd.append('cuv', files.cuv);
-            fd.append('xml', files.xml);
-            fd.append('prestadorId', String(prestadorId));
-            fd.append('periodo_fac', String(periodoFac));
-            fd.append('anio', String(anio));
-            // Valor: LineExtensionAmount del XML, fallback TotalFactura de la API del Ministerio
-            const valorFactura = result?.xmlLineExt ?? result?.apiTotal ?? null;
-            if (valorFactura != null) fd.append('valorFactura', String(valorFactura));
-
-            const res = await apiFetch('/api/auth/upload-json-file', { method: 'POST', body: fd });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data?.message || 'Error en la carga');
-
-            setUploadDone(true);
-            setUploadModal({
-                radicado: data.radicado || '—',
-                fecha: new Date().toLocaleString('es-CO', {
-                    year: 'numeric', month: 'long', day: 'numeric',
-                    hour: '2-digit', minute: '2-digit',
-                }),
-            });
-        } catch (err) {
-            toast.error(err.message || 'Error al subir');
-        } finally {
-            setUploading(false);
-        }
-    };
-
-    const handleValidar = async () => {
-        if (!allLoaded) return;
-        setLoading(true);
-        setResult(null);
-
-        try {
-            const cuvCode = parsed.cuv?.cuv;
-            const apiData = await consultarCUV(cuvCode);
-
-            const isValid = apiData.EsValido === true || apiData.ResultState === true;
-
-            // Validación API: CodigoUnicoValidacion de la respuesta debe coincidir con el CUV del archivo
-            const apiCuv = apiData.CodigoUnicoValidacion && apiData.CodigoUnicoValidacion !== '-'
-                ? String(apiData.CodigoUnicoValidacion).trim()
-                : null;
-            const cuvMatch = apiCuv ? apiCuv === String(cuvCode).trim() : true; // si la API no devuelve CUV, no penalizar
-
-            // Campos de número de factura de cada archivo
-            const cuvFactura = parsed.cuv?.factura ? String(parsed.cuv.factura).trim() : null;
-            const ripNumFactura = parsed.rip?.numFactura ? String(parsed.rip.numFactura).trim() : null;
-            const xmlParentDoc = parsed.xml?.parentDocumentID ? String(parsed.xml.parentDocumentID).trim() : null;
-            const xmlQrNumFac = parsed.xml?.qrNumFac ? String(parsed.xml.qrNumFac).trim() : null;
-
-            // Normalizar quitando ceros a la izquierda
-            const normalize = (v) => {
-                if (!v) return null;
-                const stripped = String(v).replace(/^0+/, '');
-                return stripped || '0';
-            };
-
-            const nCuvFactura = normalize(cuvFactura);
-            const nRip = normalize(ripNumFactura);
-            const nXmlParent = normalize(xmlParentDoc);
-            const nXmlQr = normalize(xmlQrNumFac);
-
-            // Referencia: el valor que tienen en común (usamos el del CUV como ancla)
-            const ref = nCuvFactura;
-
-            const checks = {
-                cuvVsRip: ref !== null && nRip !== null && nCuvFactura === nRip,
-                cuvVsXmlParent: ref !== null && nXmlParent !== null && nCuvFactura === nXmlParent,
-                cuvVsXmlQr: ref !== null && nXmlQr !== null && nCuvFactura === nXmlQr,
-                ripVsXmlParent: nRip !== null && nXmlParent !== null && nRip === nXmlParent,
-                ripVsXmlQr: nRip !== null && nXmlQr !== null && nRip === nXmlQr,
-                xmlParentVsQr: nXmlParent !== null && nXmlQr !== null && nXmlParent === nXmlQr,
-            };
-
-            const allMatch = nCuvFactura !== null
-                && nCuvFactura === nRip
-                && nCuvFactura === nXmlParent
-                && nCuvFactura === nXmlQr;
-
-            // Validación de valor: TotalFactura API vs LineExtensionAmount XML
-            const apiTotal = apiData.TotalFactura != null ? Number(apiData.TotalFactura) : null;
-            const xmlLineExt = parsed.xml?.lineExtensionAmount != null
-                ? Number(parsed.xml.lineExtensionAmount)
-                : null;
-            const valorMatch = apiTotal !== null && xmlLineExt !== null
-                ? Math.abs(apiTotal - xmlLineExt) < 0.01
-                : null; // null = no se puede comparar (falta alguno)
-
-            setResult({
-                apiData, isValid, cuvMatch, cuvCode, apiCuv,
-                cuvFactura, ripNumFactura, xmlParentDoc, xmlQrNumFac,
-                checks, allMatch,
-                apiTotal, xmlLineExt, valorMatch,
-            });
-
-            if (!isValid) {
-                toast.warning('El CUV no es válido según el Ministerio');
-            } else if (!cuvMatch) {
-                toast.error('El CUV de la respuesta no coincide con el archivo CUV');
-            } else if (allMatch) {
-                toast.success('✓ Los tres archivos corresponden a la misma factura');
-            } else {
-                toast.error('Los archivos no corresponden a la misma factura');
-            }
-        } catch (err) {
-            toast.error(err.message || 'Error al validar');
-            setResult({ error: err.message });
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    return (
-        <div className="fade-up fade-up-1">
-            {/* Header */}
-            <div className="mb-6 flex items-start justify-between gap-4">
-                <div>
-                    <h1 className="text-xl font-semibold text-[#111111] tracking-tight">Cargar Factura</h1>
-                    <p className="mt-1 text-sm text-[#787774]">
-                        Completa la información, sube los archivos y valida antes de subir al sistema.
+    if (uploaded) {
+        return (
+            <div style={{ border: '1px solid #B7D9BA', borderRadius: 10, backgroundColor: '#EDF3EC' }} className="p-4 flex items-center gap-3">
+                <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-green-800">
+                        Factura {parsed.rip?.numFactura || uploadInfo?.numFactura} subida correctamente
+                    </p>
+                    <p className="text-xs text-green-700 mt-0.5">
+                        Radicado: <span className="font-mono font-semibold">{uploadInfo?.radicado}</span>
+                        {uploadInfo?.reused ? ' · anexada a la cuenta existente' : ' · cuenta nueva'}
                     </p>
                 </div>
-                {(files.cuv || files.rip || files.xml || result) && (
+            </div>
+        );
+    }
+
+    return (
+        <div style={{ border: '1px solid #EAEAEA', borderRadius: 10, backgroundColor: '#ffffff' }} className="p-4 space-y-3">
+            <div className="flex items-center justify-between">
+                <p className="text-sm font-semibold text-[#111111]">Factura #{index + 1}</p>
+                {canRemove && (
                     <button
-                        onClick={handleReset}
-                        className="flex items-center gap-1.5 text-xs text-[#787774] hover:text-[#111111] transition-colors px-3 py-2 rounded-lg hover:bg-slate-100"
+                        onClick={onRemove}
+                        className="p-1.5 rounded-lg hover:bg-red-50 text-red-400 hover:text-red-600 transition-colors"
+                        title="Quitar esta factura"
                     >
-                        <RotateCcw className="w-3.5 h-3.5" />
-                        Limpiar
+                        <Trash2 className="w-4 h-4" />
                     </button>
                 )}
             </div>
 
-            {/* 1 — Prestador + Período */}
-            <div style={{ border: '1px solid #EAEAEA', borderRadius: 8, backgroundColor: '#ffffff' }} className="p-4 mb-4 space-y-4">
-                <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Prestador</label>
-                    <Select
-                        options={prestadorOptions}
-                        value={selectedPrestador}
-                        onChange={opt => setPrestadorId(opt ? opt.value : '')}
-                        isClearable
-                        placeholder="Buscar y seleccionar prestador..."
-                        classNamePrefix="react-select"
-                        styles={SELECT_STYLES}
-                    />
-                </div>
-                <div>
-                    <p className="text-sm font-medium text-slate-700 mb-2">Período de facturación</p>
-                    <div className="grid grid-cols-2 gap-3">
-                        <div>
-                            <label className="block text-xs font-medium text-slate-600 mb-1">Mes</label>
-                            <Select
-                                options={monthOptions}
-                                value={monthOptions.find(o => o.value === Number(periodoFac)) || null}
-                                onChange={s => setPeriodoFac(s ? s.value : '')}
-                                placeholder="Seleccionar mes"
-                                isClearable
-                                classNamePrefix="react-select"
-                                styles={SELECT_STYLES}
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-xs font-medium text-slate-600 mb-1">Año</label>
-                            <Select
-                                options={yearsOptions}
-                                value={yearsOptions.find(o => o.value === Number(anio)) || null}
-                                onChange={s => setAnio(s ? s.value : '')}
-                                placeholder="Seleccionar año"
-                                isClearable
-                                classNamePrefix="react-select"
-                                styles={SELECT_STYLES}
-                            />
-                        </div>
-                    </div>
-                </div>
+            {/* Dropzones */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <FileSlot slotKey="cuv" file={files.cuv} onFile={(f) => onFile('cuv', f)} onClear={() => onClear('cuv')} />
+                <FileSlot slotKey="rip" file={files.rip} onFile={(f) => onFile('rip', f)} onClear={() => onClear('rip')} />
+                <FileSlot slotKey="xml" file={files.xml} onFile={(f) => onFile('xml', f)} onClear={() => onClear('xml')} />
             </div>
 
-            {/* 2 — Dropzones */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
-                <FileSlot slotKey="cuv" file={files.cuv} onFile={(f) => handleFile('cuv', f)} onClear={() => handleClear('cuv')} />
-                <FileSlot slotKey="rip" file={files.rip} onFile={(f) => handleFile('rip', f)} onClear={() => handleClear('rip')} />
-                <FileSlot slotKey="xml" file={files.xml} onFile={(f) => handleFile('xml', f)} onClear={() => handleClear('xml')} />
-            </div>
-
-            {/* 3 — Vista previa RIP (aparece en cuanto se carga el archivo) */}
+            {/* Vista previa RIP */}
             {parsed.rip?.numFactura && (
-                <div style={{ border: '1px solid #EAEAEA', borderRadius: 8, backgroundColor: '#F9F9F8' }} className="p-4 mb-4">
+                <div style={{ border: '1px solid #EAEAEA', borderRadius: 8, backgroundColor: '#F9F9F8' }} className="p-4">
                     <p className="text-xs font-semibold text-[#787774] uppercase tracking-wide mb-3">Vista previa — RIP</p>
                     <dl className="grid grid-cols-2 sm:grid-cols-4 gap-y-3 text-xs">
                         {Object.entries({
@@ -582,16 +358,16 @@ export default function CargarFactura() {
                 </div>
             )}
 
-            {/* 4 — Botón validar (solo cuando aún no hay resultado) */}
+            {/* Botón validar */}
             {!result && (
                 <button
-                    onClick={handleValidar}
+                    onClick={onValidar}
                     disabled={!allLoaded || loading}
                     style={{
                         backgroundColor: allLoaded && !loading ? '#346538' : undefined,
                         borderRadius: 10,
                     }}
-                    className="w-full py-3 text-sm font-semibold text-white flex items-center justify-center gap-2 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed transition-colors hover:opacity-90 mb-4"
+                    className="w-full py-3 text-sm font-semibold text-white flex items-center justify-center gap-2 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed transition-colors hover:opacity-90"
                 >
                     {loading
                         ? <><Loader2 className="w-4 h-4 animate-spin" /> Validando con el Ministerio...</>
@@ -772,34 +548,23 @@ export default function CargarFactura() {
                     {/* Subir al sistema */}
                     {result.isValid && result.allMatch && (
                         <button
-                            onClick={handleSubir}
-                            disabled={uploading || uploadDone}
+                            onClick={onSubir}
+                            disabled={uploading}
                             style={{
                                 borderRadius: 10,
-                                cursor: uploading || uploadDone ? 'not-allowed' : 'pointer',
-                                backgroundColor: uploadDone ? '#166534' : uploading ? '#374151' : '#1F6C9F',
+                                cursor: uploading ? 'not-allowed' : 'pointer',
+                                backgroundColor: uploading ? '#374151' : '#1F6C9F',
                                 transition: 'background-color 400ms',
                             }}
                             className="w-full py-3 text-sm font-semibold text-white flex items-center justify-center gap-2 hover:opacity-90"
                         >
                             {uploading ? (
                                 <><Loader2 className="w-4 h-4 animate-spin" /> Subiendo al sistema...</>
-                            ) : uploadDone ? (
-                                <><CheckCircle2 className="w-4 h-4" /> Factura subida</>
                             ) : (
-                                <>Subir al sistema</>
+                                <>Subir esta factura</>
                             )}
                         </button>
                     )}
-
-                    {/* Volver a cargar */}
-                    <button
-                        onClick={handleReset}
-                        className="w-full py-2.5 text-sm font-medium text-[#787774] hover:text-[#111111] hover:bg-slate-100 rounded-lg transition-colors flex items-center justify-center gap-2"
-                    >
-                        <RotateCcw className="w-3.5 h-3.5" />
-                        Cargar otra factura
-                    </button>
                 </div>
             )}
 
@@ -812,6 +577,426 @@ export default function CargarFactura() {
                     </div>
                 </div>
             )}
+        </div>
+    );
+}
+
+// ─── Página principal ─────────────────────────────────────────────────────────
+
+const SELECT_STYLES = {
+    container: (b) => ({ ...b, width: '100%' }),
+    control: (b) => ({ ...b, borderRadius: 10, borderColor: '#CBD5E1', boxShadow: 'none', padding: '2px 4px' }),
+    input: (b) => ({ ...b, color: 'inherit' }),
+    menu: (b) => ({ ...b, borderRadius: 10 }),
+};
+
+const MAX_CUV_INTENTOS = 3;
+
+function emptyItem(id) {
+    return {
+        id,
+        files: { cuv: null, rip: null, xml: null },
+        parsed: { cuv: null, rip: null, xml: null },
+        loading: false,
+        uploading: false,
+        uploaded: false,
+        uploadInfo: null,
+        result: null,
+    };
+}
+
+export default function CargarFactura() {
+    const nextId = useRef(1);
+    const [items, setItems] = useState(() => [emptyItem(0)]);
+    const [batchValidating, setBatchValidating] = useState(false);
+    const [batchUploading, setBatchUploading] = useState(false);
+    const [uploadModal, setUploadModal] = useState(null);
+    const [modalLimiteCuv, setModalLimiteCuv] = useState(false);
+
+    // Map CUV -> número de intentos de validación en esta sesión
+    const cuvIntentos = useCallback(() => {
+        if (!window.__cuvIntentos) window.__cuvIntentos = {};
+        return window.__cuvIntentos;
+    }, []);
+
+    // Datos compartidos por todas las facturas de esta cuenta de cobro
+    const [periodoFac, setPeriodoFac] = useState('');
+    const [anio, setAnio] = useState(2026);
+    const [numeroCuentaCobro, setNumeroCuentaCobro] = useState('');
+
+    const getItem = useCallback((id) => items.find(it => it.id === id), [items]);
+    const updateItem = useCallback((id, patch) => {
+        setItems(prev => prev.map(it => it.id === id ? { ...it, ...(typeof patch === 'function' ? patch(it) : patch) } : it));
+    }, []);
+
+    const handleAddItem = () => {
+        const id = nextId.current++;
+        setItems(prev => [...prev, emptyItem(id)]);
+    };
+
+    const handleRemoveItem = (id) => {
+        setItems(prev => prev.length > 1 ? prev.filter(it => it.id !== id) : prev);
+    };
+
+    const handleResetAll = () => {
+        nextId.current = 1;
+        setItems([emptyItem(0)]);
+        setPeriodoFac('');
+        setAnio(2026);
+        setNumeroCuentaCobro('');
+    };
+
+    const handleFile = useCallback(async (id, slot, file) => {
+        const text = await file.text();
+        let data = null;
+
+        if (slot === 'cuv') {
+            const cuv = extractCuvFromText(text);
+            const factura = extractFacturaFromCuv(text);
+            data = { cuv, factura, text };
+            if (!cuv) {
+                toast.error('No se encontró CodigoUnicoValidacion en el archivo CUV');
+                return;
+            }
+        } else if (slot === 'rip') {
+            data = extractFromRip(text);
+        } else if (slot === 'xml') {
+            data = extractFromXml(text);
+        }
+
+        updateItem(id, it => ({
+            files: { ...it.files, [slot]: file },
+            parsed: { ...it.parsed, [slot]: data },
+            result: null,
+        }));
+    }, [updateItem]);
+
+    const handleClear = useCallback((id, slot) => {
+        updateItem(id, it => ({
+            files: { ...it.files, [slot]: null },
+            parsed: { ...it.parsed, [slot]: null },
+            result: null,
+        }));
+    }, [updateItem]);
+
+    const handleValidarItem = async (id) => {
+        const item = getItem(id);
+        if (!item) return true;
+        const { files, parsed } = item;
+        const allLoaded = files.cuv && files.rip && files.xml;
+        if (!allLoaded) return true;
+
+        const cuvCode = parsed.cuv?.cuv;
+        if (cuvCode) {
+            const intentos = cuvIntentos();
+            intentos[cuvCode] = (intentos[cuvCode] || 0) + 1;
+            if (intentos[cuvCode] > MAX_CUV_INTENTOS) {
+                setModalLimiteCuv(true);
+                return false;
+            }
+        }
+
+        updateItem(id, { loading: true, result: null });
+
+        try {
+            const apiData = await consultarCUV(cuvCode);
+
+            const isValid = apiData.EsValido === true || apiData.ResultState === true;
+
+            // Validación API: CodigoUnicoValidacion de la respuesta debe coincidir con el CUV del archivo
+            const apiCuv = apiData.CodigoUnicoValidacion && apiData.CodigoUnicoValidacion !== '-'
+                ? String(apiData.CodigoUnicoValidacion).trim()
+                : null;
+            const cuvMatch = apiCuv ? apiCuv === String(cuvCode).trim() : true; // si la API no devuelve CUV, no penalizar
+
+            // Campos de número de factura de cada archivo
+            const cuvFactura = parsed.cuv?.factura ? String(parsed.cuv.factura).trim() : null;
+            const ripNumFactura = parsed.rip?.numFactura ? String(parsed.rip.numFactura).trim() : null;
+            const xmlParentDoc = parsed.xml?.parentDocumentID ? String(parsed.xml.parentDocumentID).trim() : null;
+            const xmlQrNumFac = parsed.xml?.qrNumFac ? String(parsed.xml.qrNumFac).trim() : null;
+
+            // Normalizar quitando ceros a la izquierda
+            const normalize = (v) => {
+                if (!v) return null;
+                const stripped = String(v).replace(/^0+/, '');
+                return stripped || '0';
+            };
+
+            const nCuvFactura = normalize(cuvFactura);
+            const nRip = normalize(ripNumFactura);
+            const nXmlParent = normalize(xmlParentDoc);
+            const nXmlQr = normalize(xmlQrNumFac);
+
+            // Referencia: el valor que tienen en común (usamos el del CUV como ancla)
+            const ref = nCuvFactura;
+
+            const checks = {
+                cuvVsRip: ref !== null && nRip !== null && nCuvFactura === nRip,
+                cuvVsXmlParent: ref !== null && nXmlParent !== null && nCuvFactura === nXmlParent,
+                cuvVsXmlQr: ref !== null && nXmlQr !== null && nCuvFactura === nXmlQr,
+                ripVsXmlParent: nRip !== null && nXmlParent !== null && nRip === nXmlParent,
+                ripVsXmlQr: nRip !== null && nXmlQr !== null && nRip === nXmlQr,
+                xmlParentVsQr: nXmlParent !== null && nXmlQr !== null && nXmlParent === nXmlQr,
+            };
+
+            const allMatch = nCuvFactura !== null
+                && nCuvFactura === nRip
+                && nCuvFactura === nXmlParent
+                && nCuvFactura === nXmlQr;
+
+            // Validación de valor: TotalFactura API vs LineExtensionAmount XML
+            const apiTotal = apiData.TotalFactura != null ? Number(apiData.TotalFactura) : null;
+            const xmlLineExt = parsed.xml?.lineExtensionAmount != null
+                ? Number(parsed.xml.lineExtensionAmount)
+                : null;
+            const valorMatch = apiTotal !== null && xmlLineExt !== null
+                ? Math.abs(apiTotal - xmlLineExt) < 0.01
+                : null; // null = no se puede comparar (falta alguno)
+
+            updateItem(id, {
+                loading: false,
+                result: {
+                    apiData, isValid, cuvMatch, cuvCode, apiCuv,
+                    cuvFactura, ripNumFactura, xmlParentDoc, xmlQrNumFac,
+                    checks, allMatch,
+                    apiTotal, xmlLineExt, valorMatch,
+                },
+            });
+
+            if (!isValid) {
+                toast.warning(`El CUV no es válido según el Ministerio (factura ${cuvFactura || ''})`);
+            } else if (!cuvMatch) {
+                toast.error('El CUV de la respuesta no coincide con el archivo CUV');
+            } else if (allMatch) {
+                toast.success(`✓ Factura ${cuvFactura || ''}: los tres archivos corresponden`);
+            } else {
+                toast.error(`Factura ${cuvFactura || ''}: los archivos no corresponden entre sí`);
+            }
+        } catch (err) {
+            updateItem(id, { loading: false, result: { error: err.message } });
+            toast.error(err.message || 'Error al validar');
+        }
+        return true;
+    };
+
+    const handleValidarTodas = async () => {
+        const pendientes = items.filter(it => it.files.cuv && it.files.rip && it.files.xml && !it.result);
+        if (pendientes.length === 0) return;
+        setBatchValidating(true);
+        for (const it of pendientes) {
+            const seguir = await handleValidarItem(it.id);
+            if (!seguir) break;
+        }
+        setBatchValidating(false);
+    };
+
+    const handleSubirItem = async (id) => {
+        const item = getItem(id);
+        if (!item || item.uploaded) return null;
+        if (!periodoFac) { toast.error('Seleccione el mes de facturación'); return null; }
+        if (!anio) { toast.error('Seleccione el año de facturación'); return null; }
+        if (!numeroCuentaCobro.trim()) { toast.error('Ingrese el número de cuenta de cobro'); return null; }
+
+        updateItem(id, { uploading: true });
+        try {
+            const fd = new FormData();
+            fd.append('rip', item.files.rip);
+            fd.append('cuv', item.files.cuv);
+            fd.append('xml', item.files.xml);
+            fd.append('periodo_fac', String(periodoFac));
+            fd.append('anio', String(anio));
+            fd.append('numero_cuenta_cobro', numeroCuentaCobro.trim());
+            // Valor: LineExtensionAmount del XML, fallback TotalFactura de la API del Ministerio
+            const valorFactura = item.result?.xmlLineExt ?? item.result?.apiTotal ?? null;
+            if (valorFactura != null) fd.append('valorFactura', String(valorFactura));
+
+            const res = await apiFetch('/api/auth/upload-json-file', { method: 'POST', body: fd });
+            const data = await res.json();
+            if (!res.ok) {
+                const msg = data?.message || 'Error en la carga';
+                const esDuplicada = msg.toLowerCase().includes('duplic') || msg.toLowerCase().includes('ya exist') || res.status === 409;
+                if (esDuplicada) {
+                    toast.error(`Esta factura ya fue registrada en el sistema anteriormente (${item.result?.cuvFactura || ''}).`, { autoClose: 6000 });
+                } else {
+                    toast.error(msg);
+                }
+                return null;
+            }
+
+            const numFactura = item.parsed.rip?.numFactura || item.result?.cuvFactura || '—';
+            updateItem(id, {
+                uploading: false,
+                uploaded: true,
+                uploadInfo: { radicado: data.radicado || '—', reused: !!data.reused, numFactura },
+            });
+            return { radicado: data.radicado || '—', reused: !!data.reused, numFactura };
+        } catch (err) {
+            toast.error(err.message || 'Error al subir');
+            return null;
+        } finally {
+            updateItem(id, { uploading: false });
+        }
+    };
+
+    const handleSubirTodas = async () => {
+        const validas = items.filter(it => it.result?.isValid && it.result?.allMatch && !it.uploaded);
+        if (validas.length === 0) return;
+        setBatchUploading(true);
+        const subidas = [];
+        for (const it of validas) {
+            const info = await handleSubirItem(it.id);
+            if (info) subidas.push(info);
+        }
+        setBatchUploading(false);
+
+        if (subidas.length > 0) {
+            setUploadModal({
+                radicado: subidas[subidas.length - 1].radicado,
+                facturas: subidas.map(s => s.numFactura),
+                fecha: new Date().toLocaleString('es-CO', {
+                    year: 'numeric', month: 'long', day: 'numeric',
+                    hour: '2-digit', minute: '2-digit',
+                }),
+            });
+        }
+    };
+
+    const validablesCount = items.filter(it => it.files.cuv && it.files.rip && it.files.xml && !it.result).length;
+    const subiblesCount = items.filter(it => it.result?.isValid && it.result?.allMatch && !it.uploaded).length;
+    const hayAlgoCargado = items.some(it => it.files.cuv || it.files.rip || it.files.xml || it.result || it.uploaded);
+
+    return (
+        <div className="fade-up fade-up-1">
+            {/* Header */}
+            <div className="mb-6 flex items-start justify-between gap-4">
+                <div>
+                    <h1 className="text-xl font-semibold text-[#111111] tracking-tight">Cargar Factura</h1>
+                    <p className="mt-1 text-sm text-[#787774]">
+                        Completa la información, sube los archivos y valida antes de subir al sistema. Puedes anexar varias facturas a la misma cuenta de cobro.
+                    </p>
+                </div>
+                {hayAlgoCargado && (
+                    <button
+                        onClick={handleResetAll}
+                        className="flex items-center gap-1.5 text-xs text-[#787774] hover:text-[#111111] transition-colors px-3 py-2 rounded-lg hover:bg-slate-100"
+                    >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                        Limpiar todo
+                    </button>
+                )}
+            </div>
+
+            {/* 1 — Período + Cuenta de cobro (compartidos por todas las facturas) */}
+            <div style={{ border: '1px solid #EAEAEA', borderRadius: 8, backgroundColor: '#ffffff' }} className="p-4 mb-4 space-y-4">
+                <div>
+                    <p className="text-sm font-medium text-slate-700 mb-2">Período de facturación</p>
+                    <div className="grid grid-cols-2 gap-3">
+                        <div>
+                            <label className="block text-xs font-medium text-slate-600 mb-1">Mes</label>
+                            <Select
+                                options={monthOptions}
+                                value={monthOptions.find(o => o.value === Number(periodoFac)) || null}
+                                onChange={s => setPeriodoFac(s ? s.value : '')}
+                                placeholder="Seleccionar mes"
+                                isClearable
+                                classNamePrefix="react-select"
+                                styles={SELECT_STYLES}
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-medium text-slate-600 mb-1">Año</label>
+                            <Select
+                                options={yearsOptions}
+                                value={yearsOptions.find(o => o.value === Number(anio)) || null}
+                                onChange={s => setAnio(s ? s.value : '')}
+                                placeholder="Seleccionar año"
+                                isClearable
+                                classNamePrefix="react-select"
+                                styles={SELECT_STYLES}
+                            />
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <label className="block text-xs font-medium text-slate-600 mb-1">Número de Cuenta de Cobro</label>
+                    <input
+                        type="text"
+                        value={numeroCuentaCobro}
+                        onChange={e => setNumeroCuentaCobro(e.target.value)}
+                        placeholder="Ej: CC-2026-001"
+                        style={{
+                            width: '100%',
+                            borderRadius: 10,
+                            border: '1px solid #CBD5E1',
+                            padding: '8px 12px',
+                            fontSize: 14,
+                            outline: 'none',
+                            boxSizing: 'border-box',
+                        }}
+                    />
+                    <p className="mt-1.5 text-xs text-[#787774]">
+                        Si este número ya tiene facturas cargadas y activas, las nuevas se anexarán al mismo radicado.
+                    </p>
+                </div>
+            </div>
+
+            {/* 2 — Acciones por lote (solo si hay más de una factura pendiente) */}
+            {(validablesCount > 1 || subiblesCount > 1) && (
+                <div className="flex flex-wrap gap-2 mb-4">
+                    {validablesCount > 1 && (
+                        <button
+                            onClick={handleValidarTodas}
+                            disabled={batchValidating}
+                            style={{ borderRadius: 10, backgroundColor: '#346538' }}
+                            className="flex-1 min-w-[220px] py-2.5 text-sm font-semibold text-white flex items-center justify-center gap-2 disabled:opacity-60 hover:opacity-90 transition-opacity"
+                        >
+                            {batchValidating
+                                ? <><Loader2 className="w-4 h-4 animate-spin" /> Validando {validablesCount} facturas...</>
+                                : <>Validar {validablesCount} facturas pendientes</>
+                            }
+                        </button>
+                    )}
+                    {subiblesCount > 1 && (
+                        <button
+                            onClick={handleSubirTodas}
+                            disabled={batchUploading}
+                            style={{ borderRadius: 10, backgroundColor: '#1F6C9F' }}
+                            className="flex-1 min-w-[220px] py-2.5 text-sm font-semibold text-white flex items-center justify-center gap-2 disabled:opacity-60 hover:opacity-90 transition-opacity"
+                        >
+                            {batchUploading
+                                ? <><Loader2 className="w-4 h-4 animate-spin" /> Subiendo {subiblesCount} facturas...</>
+                                : <>Subir {subiblesCount} facturas validadas</>
+                            }
+                        </button>
+                    )}
+                </div>
+            )}
+
+            {/* 3 — Facturas */}
+            <div className="space-y-4 mb-4">
+                {items.map((item, idx) => (
+                    <InvoiceItemCard
+                        key={item.id}
+                        index={idx}
+                        item={item}
+                        canRemove={items.length > 1 && !item.uploaded}
+                        onFile={(slot, f) => handleFile(item.id, slot, f)}
+                        onClear={(slot) => handleClear(item.id, slot)}
+                        onValidar={() => handleValidarItem(item.id)}
+                        onSubir={() => handleSubirItem(item.id)}
+                        onRemove={() => handleRemoveItem(item.id)}
+                    />
+                ))}
+            </div>
+
+            {/* 4 — Agregar otra factura a esta cuenta */}
+            <button
+                onClick={handleAddItem}
+                className="w-full py-2.5 mb-4 text-sm font-medium text-[#1F6C9F] hover:text-white border border-dashed border-[#A3D4F0] hover:bg-[#1F6C9F] rounded-lg transition-colors flex items-center justify-center gap-2"
+            >
+                <Plus className="w-4 h-4" />
+                Agregar otra factura a esta cuenta de cobro
+            </button>
 
             {/* Modal de éxito — renderizado en document.body vía portal */}
             {uploadModal && createPortal(
@@ -844,8 +1029,10 @@ export default function CargarFactura() {
                         </div>
 
                         <div style={{ textAlign: 'center' }}>
-                            <p style={{ fontSize: 15, fontWeight: 600, color: '#111111', marginBottom: 4 }}>Factura subida correctamente</p>
-                            <p style={{ fontSize: 13, color: '#787774' }}>La factura ha sido registrada en el sistema.</p>
+                            <p style={{ fontSize: 15, fontWeight: 600, color: '#111111', marginBottom: 4 }}>
+                                {uploadModal.facturas.length > 1 ? `${uploadModal.facturas.length} facturas subidas correctamente` : 'Factura subida correctamente'}
+                            </p>
+                            <p style={{ fontSize: 13, color: '#787774' }}>Quedaron registradas en el sistema bajo el mismo radicado.</p>
                         </div>
 
                         <div style={{ backgroundColor: '#F9F9F8', borderRadius: 10, padding: '14px 18px', width: '100%', display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -857,6 +1044,12 @@ export default function CargarFactura() {
                                 <span style={{ color: '#787774', fontWeight: 500, flexShrink: 0 }}>Fecha</span>
                                 <span style={{ fontWeight: 500, color: '#111111', textAlign: 'right' }}>{uploadModal.fecha}</span>
                             </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, paddingTop: 4, borderTop: '1px solid #EAEAEA' }}>
+                                <span style={{ color: '#787774', fontWeight: 500, fontSize: 13 }}>Facturas</span>
+                                {uploadModal.facturas.map((f, i) => (
+                                    <span key={i} style={{ fontFamily: 'monospace', fontSize: 13, color: '#111111' }}>{f}</span>
+                                ))}
+                            </div>
                         </div>
 
                         <button
@@ -866,6 +1059,40 @@ export default function CargarFactura() {
                             onMouseLeave={e => e.currentTarget.style.opacity = '1'}
                         >
                             Cerrar
+                        </button>
+                    </div>
+                </div>,
+                document.body
+            )}
+
+            {/* Modal límite de intentos CUV */}
+            {modalLimiteCuv && createPortal(
+                <div
+                    style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, backgroundColor: 'rgba(0,0,0,0.5)' }}
+                    onClick={() => setModalLimiteCuv(false)}
+                >
+                    <div
+                        style={{ backgroundColor: '#fff', borderRadius: 16, padding: '32px 28px', boxShadow: '0 20px 60px rgba(0,0,0,0.2)', width: '100%', maxWidth: 380, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20 }}
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <div style={{ width: 64, height: 64, borderRadius: '50%', backgroundColor: '#FEF2F2', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <AlertCircle style={{ width: 32, height: 32, color: '#B91C1C' }} />
+                        </div>
+                        <div style={{ textAlign: 'center' }}>
+                            <p style={{ fontSize: 15, fontWeight: 700, color: '#111111', marginBottom: 8 }}>Límite de intentos alcanzado</p>
+                            <p style={{ fontSize: 13, color: '#787774', lineHeight: 1.6 }}>
+                                Solo se permiten <strong>{MAX_CUV_INTENTOS} intentos</strong> de validación por CUV en cada sesión.
+                                Si el problema persiste, comunícate con{' '}
+                                <a href="mailto:auditoriacuentas@idsn.gov.co" style={{ color: '#462882', fontWeight: 600 }}>
+                                    auditoriacuentas@idsn.gov.co
+                                </a>
+                            </p>
+                        </div>
+                        <button
+                            onClick={() => setModalLimiteCuv(false)}
+                            style={{ borderRadius: 10, backgroundColor: '#B91C1C', cursor: 'pointer', width: '100%', padding: '10px 0', fontSize: 14, fontWeight: 600, color: '#fff', border: 'none' }}
+                        >
+                            Entendido
                         </button>
                     </div>
                 </div>,

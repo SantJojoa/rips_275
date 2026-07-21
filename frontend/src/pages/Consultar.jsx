@@ -260,7 +260,7 @@ function RegistroCard({ r, onDescargar }) {
                                 file ? (
                                     <button
                                         key={tipo}
-                                        onClick={() => onDescargar(r.control_id, file)}
+                                        onClick={() => onDescargar(r.transaccion_id, file)}
                                         style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, border: `1px solid ${color}30`, backgroundColor: color + '10', cursor: 'pointer', fontSize: 12, fontWeight: 600, color }}
                                         onMouseEnter={e => e.currentTarget.style.backgroundColor = color + '20'}
                                         onMouseLeave={e => e.currentTarget.style.backgroundColor = color + '10'}
@@ -347,9 +347,9 @@ function MisRegistros() {
         setBusqueda(''); setFechaDesde(''); setFechaHasta(''); setPeriodo('');
     };
 
-    const handleDescargar = async (controlId, filename) => {
+    const handleDescargar = async (transaccionId, filename) => {
         try {
-            const res = await apiFetch(`/api/auth/descargar-archivo?controlId=${controlId}&filename=${encodeURIComponent(filename)}`);
+            const res = await apiFetch(`/api/auth/descargar-archivo?transaccionId=${transaccionId}&filename=${encodeURIComponent(filename)}`);
             if (!res.ok) { showError('No se pudo descargar el archivo'); return; }
             const blob = await res.blob();
             const url  = URL.createObjectURL(blob);
@@ -470,7 +470,7 @@ function MisRegistros() {
                     </p>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                         {filtrados.map(r => (
-                            <RegistroCard key={r.control_id} r={r} onDescargar={handleDescargar} />
+                            <RegistroCard key={r.transaccion_id || r.control_id} r={r} onDescargar={handleDescargar} />
                         ))}
                     </div>
                 </>

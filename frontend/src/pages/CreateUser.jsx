@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { apiFetch } from '../lib/api';
 import { showError, showSuccess } from '../utils/toastUtils';
 import { Eye, EyeOff } from 'lucide-react';
+import Select from 'react-select';
 
 const inputStyle = {
     border: '1px solid #EAEAEA',
@@ -43,14 +44,46 @@ function StyledInput({ style: extraStyle, ...props }) {
     );
 }
 
+const SELECT_STYLES = {
+    control: (b, s) => ({
+        ...b,
+        borderColor: s.isFocused ? '#462882' : '#EAEAEA',
+        boxShadow: s.isFocused ? '0 0 0 3px rgba(70,40,130,0.08)' : 'none',
+        borderRadius: '6px',
+        fontSize: '14px',
+        minHeight: '38px',
+        '&:hover': { borderColor: '#462882' },
+    }),
+    option: (b, s) => ({
+        ...b,
+        fontSize: '13px',
+        backgroundColor: s.isSelected ? '#462882' : s.isFocused ? '#F7F6F3' : 'white',
+        color: s.isSelected ? 'white' : '#111111',
+    }),
+};
+
 export default function CreateUser() {
     const [formData, setFormData] = useState({
         username: '', nombres: '', apellidos: '',
         cedula: '', password: '', confirmPassword: '', role: 'USER'
     });
+    const [prestadores, setPrestadores] = useState([]);
+    const [prestadorId, setPrestadorId] = useState(null);
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+    useEffect(() => {
+        apiFetch('/api/auth/prestadores')
+            .then(r => r.json())
+            .then(data => setPrestadores(Array.isArray(data) ? data : []))
+            .catch(() => {});
+    }, []);
+
+    const prestadorOptions = prestadores.map(p => ({
+        value: p.id,
+        label: `${p.nombre || p.id}${p.nit ? ' · NIT: ' + p.nit : ''}${p.cod ? ' (' + p.cod + ')' : ''}`,
+    }));
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -65,6 +98,8 @@ export default function CreateUser() {
             return showError('Las contraseñas no coinciden');
         if (formData.password.length < 6)
             return showError('La contraseña debe tener al menos 6 caracteres');
+        if (formData.role === 'USER' && !prestadorId)
+            return showError('Los usuarios deben estar asociados a un prestador');
 
         setLoading(true);
         try {
@@ -73,13 +108,15 @@ export default function CreateUser() {
                 body: JSON.stringify({
                     username: formData.username, nombres: formData.nombres,
                     apellidos: formData.apellidos, cedula: formData.cedula,
-                    password: formData.password, role: formData.role
+                    password: formData.password, role: formData.role,
+                    id_prestador: prestadorId || null,
                 })
             });
             const data = await res.json();
             if (!res.ok) return showError(data?.message || 'Error al crear el usuario');
             showSuccess(data?.message || 'Usuario creado exitosamente');
             setFormData({ username: '', nombres: '', apellidos: '', cedula: '', password: '', confirmPassword: '', role: 'USER' });
+            setPrestadorId(null);
         } catch (error) {
             showError(error?.message || 'Error al crear el usuario');
         } finally {
@@ -166,6 +203,23 @@ export default function CreateUser() {
                             <option value="USER">Usuario</option>
                             <option value="ADMIN">Administrador</option>
                         </select>
+                    </Field>
+
+                    <Field label={`Prestador asociado${formData.role === 'USER' ? ' *' : ' (opcional)'}`}>
+                        <Select
+                            options={prestadorOptions}
+                            value={prestadorOptions.find(o => o.value === prestadorId) || null}
+                            onChange={opt => setPrestadorId(opt ? opt.value : null)}
+                            isClearable
+                            placeholder="Buscar prestador..."
+                            styles={SELECT_STYLES}
+                            noOptionsMessage={() => 'Sin resultados'}
+                        />
+                        <p style={{ fontSize: '11px', color: '#787774', marginTop: '4px' }}>
+                            {formData.role === 'USER'
+                                ? 'El usuario solo podrá subir facturas del prestador asignado.'
+                                : 'Para roles ADMIN/SUPERADMIN el prestador es opcional.'}
+                        </p>
                     </Field>
 
                     <div style={{ borderTop: '1px solid #EAEAEA' }} className="pt-4">

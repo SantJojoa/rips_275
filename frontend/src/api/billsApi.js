@@ -55,14 +55,15 @@ export async function fetchBillById(id) {
     }
 }
 
-export async function deleteBill(id) {
+export async function deleteBill(id, motivo = null) {
     try {
         if (!id) {
             throw new Error('ID de factura es requerido');
         }
 
         const res = await apiFetch(`/api/bills/${id}`, {
-            method: 'DELETE'
+            method: 'DELETE',
+            body: JSON.stringify({ motivo }),
         });
 
         if (!res.ok) {
