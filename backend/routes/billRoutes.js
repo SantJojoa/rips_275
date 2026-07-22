@@ -5,7 +5,8 @@ import {
     updateBill,
     deleteBill,
     hardDeleteBill,
-    getBillsStats
+    getBillsStats,
+    getInactiveBills
 } from '../controllers/billController.js';
 import { authenticate, authorize, authorizeSuperAdmin } from '../middlewares/auth.js';
 
@@ -18,19 +19,8 @@ const router = express.Router();
  * @access  Private/Admin
  */
 router.get('/', authenticate, authorize, getBills);
-
-/**
- * @route   GET /api/bills/stats
- * @desc    Obtener estadísticas de facturas
- * @access  Private/Admin
- */
 router.get('/stats', authenticate, authorize, getBillsStats);
-
-/**
- * @route   GET /api/bills/:id
- * @desc    Obtener factura por ID
- * @access  Private/Admin
- */
+router.get('/inactivas', authenticate, authorize, getInactiveBills);
 router.get('/:id', authenticate, authorize, getBillById);
 
 /**
@@ -45,7 +35,7 @@ router.put('/:id', authenticate, authorize, updateBill);
  * @desc    Desactivar una factura (soft delete)
  * @access  Private/Admin
  */
-router.delete('/:id', authenticate, authorizeSuperAdmin, deleteBill);
+router.delete('/:id', authenticate, authorize, deleteBill);
 
 /**
  * @route   DELETE /api/bills/:id/hard

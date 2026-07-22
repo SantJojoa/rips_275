@@ -96,6 +96,10 @@ export class BillValidator {
             filters.num_factura = query.num_factura.trim();
         }
 
+        if (query.numero_cuenta_cobro) {
+            filters.numero_cuenta_cobro = query.numero_cuenta_cobro.trim();
+        }
+
         return filters;
     }
 }

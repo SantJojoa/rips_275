@@ -56,9 +56,10 @@ router.get('/todos-registros', authenticate, authorize, async (req, res) => {
             SELECT
                 c.id                  AS control_id,
                 c.numero_radicado,
+                c.numero_cuenta_cobro,
                 c.periodo_fac,
                 c."año",
-                c.route,
+                COALESCE(t.route, c.route) AS route,
                 c."createdAt"         AS fecha,
                 c.id_system_user,
                 su.username,
@@ -106,13 +107,18 @@ router.get('/todos-registros', authenticate, authorize, async (req, res) => {
 // ── Descarga admin (sin restricción de usuario) ──────────────────────────────
 router.get('/descargar-archivo-admin', authenticate, authorize, async (req, res) => {
     try {
-        const { controlId, filename } = req.query;
-        if (!controlId || !filename) return res.status(400).json({ message: 'Faltan parámetros' });
+        const { transaccionId, filename } = req.query;
+        if (!transaccionId || !filename) return res.status(400).json({ message: 'Faltan parámetros' });
 
-        const control = await db.Control.findByPk(controlId);
-        if (!control) return res.status(404).json({ message: 'Control no encontrado' });
+        const transaccion = await db.Transaccion.findByPk(transaccionId, {
+            include: [{ model: db.Control, as: 'Control' }],
+        });
+        if (!transaccion) return res.status(404).json({ message: 'Factura no encontrada' });
 
-        const filePath = path.join(control.route, filename);
+        const folder = transaccion.route || transaccion.Control?.route;
+        if (!folder) return res.status(404).json({ message: 'Archivo no encontrado' });
+
+        const filePath = path.join(folder, filename);
         if (!fs.existsSync(filePath)) return res.status(404).json({ message: 'Archivo no encontrado' });
 
         res.download(filePath, filename);
@@ -131,9 +137,10 @@ router.get('/mis-registros', authenticate, async (req, res) => {
             SELECT
                 c.id                  AS control_id,
                 c.numero_radicado,
+                c.numero_cuenta_cobro,
                 c.periodo_fac,
                 c."año",
-                c.route,
+                COALESCE(t.route, c.route) AS route,
                 c."createdAt"         AS fecha,
                 t.id                  AS transaccion_id,
                 t.num_factura,
@@ -176,17 +183,22 @@ router.get('/mis-registros', authenticate, async (req, res) => {
 // ── Descarga de archivo por control ─────────────────────────────────────────
 router.get('/descargar-archivo', authenticate, async (req, res) => {
     try {
-        const { controlId, filename } = req.query;
+        const { transaccionId, filename } = req.query;
         const userId = req.user.id;
 
-        if (!controlId || !filename) return res.status(400).json({ message: 'Faltan parámetros' });
+        if (!transaccionId || !filename) return res.status(400).json({ message: 'Faltan parámetros' });
 
-        const control = await db.Control.findOne({
-            where: { id: controlId, id_system_user: userId },
+        const transaccion = await db.Transaccion.findByPk(transaccionId, {
+            include: [{ model: db.Control, as: 'Control' }],
         });
-        if (!control) return res.status(403).json({ message: 'Sin acceso a este registro' });
+        if (!transaccion || transaccion.Control?.id_system_user !== userId) {
+            return res.status(403).json({ message: 'Sin acceso a este registro' });
+        }
 
-        const filePath = path.join(control.route, filename);
+        const folder = transaccion.route || transaccion.Control?.route;
+        if (!folder) return res.status(404).json({ message: 'Archivo no encontrado' });
+
+        const filePath = path.join(folder, filename);
         if (!fs.existsSync(filePath)) return res.status(404).json({ message: 'Archivo no encontrado' });
 
         res.download(filePath, filename);

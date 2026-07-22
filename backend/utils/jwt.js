@@ -22,7 +22,8 @@ export const generateToken = (userData) => {
         nombres: userData.nombres,
         apellidos: userData.apellidos,
         cedula: userData.cedula,
-        role: userData.role
+        role: userData.role,
+        id_prestador: userData.id_prestador ?? null,
     };
 
     return jwt.sign(

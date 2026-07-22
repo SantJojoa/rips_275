@@ -8,8 +8,8 @@ export default (sequelize, DataTypes) => {
      * The `models/index` file will call this method automatically.
      */
     static associate(models) {
-      // define association here
       SystemUser.hasMany(models.Control, { foreignKey: 'id_system_user' });
+      SystemUser.belongsTo(models.Prestador, { foreignKey: 'id_prestador', as: 'prestador' });
     }
   }
   SystemUser.init({
@@ -18,7 +18,12 @@ export default (sequelize, DataTypes) => {
     apellidos: DataTypes.STRING,
     cedula: DataTypes.STRING,
     password: DataTypes.STRING,
-    role: DataTypes.ENUM('SUPERADMIN', 'ADMIN', 'USER')
+    role: DataTypes.ENUM('SUPERADMIN', 'ADMIN', 'USER'),
+    id_prestador: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: { model: 'prestadores', key: 'id' },
+    },
   }, {
     sequelize,
     modelName: 'SystemUser',

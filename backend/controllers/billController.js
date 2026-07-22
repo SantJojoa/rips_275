@@ -60,9 +60,19 @@ export const updateBill = async (req, res) => {
 export const deleteBill = async (req, res) => {
     try {
         const id = BillValidator.validateId(req.params.id);
-        const result = await BillService.softDeleteBill(id);
+        const motivo = req.body?.motivo?.trim() || null;
+        const result = await BillService.softDeleteBill(id, motivo);
 
         res.status(200).json(result);
+    } catch (error) {
+        handleControllerError(res, error);
+    }
+};
+
+export const getInactiveBills = async (req, res) => {
+    try {
+        const rows = await BillService.getInactiveBills();
+        res.status(200).json(rows);
     } catch (error) {
         handleControllerError(res, error);
     }

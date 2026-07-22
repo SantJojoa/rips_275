@@ -8,7 +8,7 @@ const { SystemUser } = db;
 export const createUserService = async (data, creatorRole) => {
     if (creatorRole !== 'SUPERADMIN') throw { status: 403, message: 'Acceso denegado: solo SUPERADMIN puede crear usuarios' };
 
-    const { username, nombres, apellidos, cedula, password, role = "USER" } = data;
+    const { username, nombres, apellidos, cedula, password, role = "USER", id_prestador } = data;
 
     if (![username, nombres, apellidos, cedula, password].every(Boolean)) {
         throw { status: 400, message: "Todos los campos son obligatorios" };
@@ -28,6 +28,7 @@ export const createUserService = async (data, creatorRole) => {
         cedula,
         password: hashedPassword,
         role,
+        id_prestador: id_prestador || null,
     });
 
     const { password: _, ...userWithoutPassword } = newUser.toJSON();

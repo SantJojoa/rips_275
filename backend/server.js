@@ -32,11 +32,22 @@ app.use('/api/bills', billsRoutes);
 const PORT = process.env.PORT || 3000;
 
 // Sincronizar modelos y levantar servidor
-db.sequelize.sync().then(() => {
-    console.log('✅ ----> Conexión exitosa a la base de datos');
-    app.listen(PORT, () => {
-        console.log(`✅ ----> Servidor corriendo en el puerto ${PORT}`);
-    });
-}).catch(err => console.error('Error al sincronizar la DB:', err));
+db.sequelize.sync()
+    .then(async () => {
+        // Migraciones idempotentes — añadir columnas nuevas si no existen
+        await db.sequelize.query(`
+            ALTER TABLE system_users
+            ADD COLUMN IF NOT EXISTS id_prestador INTEGER REFERENCES prestadores(id);
+        `).catch(() => {});
+        await db.sequelize.query(`
+            ALTER TABLE control
+            ADD COLUMN IF NOT EXISTS motivo_desactivacion TEXT;
+        `).catch(() => {});
+        console.log('✅ ----> Conexión exitosa a la base de datos');
+        app.listen(PORT, () => {
+            console.log(`✅ ----> Servidor corriendo en el puerto ${PORT}`);
+        });
+    })
+    .catch(err => console.error('Error al sincronizar la DB:', err));
 
 export default app;

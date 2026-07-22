@@ -31,19 +31,29 @@ export const uploadRipsJsonFile = async (req, res) => {
     try {
         const dataObj = RipsValidator.parseJsonFile(ripFile.path);
 
-        const { id: id_system_user } = req.user || {};
-        const { prestadorId, periodo_fac, anio, status, valorFactura } = req.body;
+        const { id: id_system_user, id_prestador } = req.user || {};
+        const { periodo_fac, anio, status, valorFactura, numero_cuenta_cobro } = req.body;
+
+        if (!numero_cuenta_cobro || !String(numero_cuenta_cobro).trim()) {
+            [ripFile, cuvFile, xmlFile].forEach(f => {
+                if (f?.path && fs.existsSync(f.path)) {
+                    try { fs.unlinkSync(f.path); } catch { /* ignorar */ }
+                }
+            });
+            return res.status(400).json({ message: 'El número de cuenta de cobro es obligatorio' });
+        }
 
         // Importar a BD con ruta temporal; la actualizamos luego con la carpeta real
         const result = await RipsImportService.processRipsImport({
             id_system_user,
-            id_prestador: prestadorId,
+            id_prestador,
             periodo_fac,
             anio,
             status,
             route: ripFile.path,
             ripsData: dataObj,
             valorFactura: valorFactura != null ? parseFloat(valorFactura) : null,
+            numero_cuenta_cobro: String(numero_cuenta_cobro).trim(),
         });
 
         // ── Organizar archivos ────────────────────────────────────────────────
@@ -67,8 +77,8 @@ export const uploadRipsJsonFile = async (req, res) => {
             moveFile(xmlFile.path, path.join(folderPath, `${baseName}_XML.xml`));
         }
 
-        // Actualizar route en control con la carpeta real
-        await db.Control.update({ route: folderPath }, { where: { id: result.controlId } });
+        // Actualizar route en la transacción (cada factura anexada tiene su propia carpeta)
+        await db.Transaccion.update({ route: folderPath }, { where: { id: result.created.transaccionId } });
 
         return res.status(201).json({
             message: 'Carga realizada correctamente',
@@ -97,6 +107,7 @@ export const uploadRipsJson = async (req, res) => {
             status,
             route,
             data: ripsData,
+            numero_cuenta_cobro,
         } = req.body || {};
 
         RipsValidator.validateBasicRequest(req.body);
@@ -111,6 +122,7 @@ export const uploadRipsJson = async (req, res) => {
             status,
             route,
             ripsData,
+            numero_cuenta_cobro,
         });
 
         return res.status(201).json({

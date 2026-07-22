@@ -1,3 +1,4 @@
+import { UniqueConstraintError } from 'sequelize';
 import db from '../models/index.js';
 import { UserCacheManager } from '../utils/userCacheManager.js';
 import { RipsValidator } from '../validators/ripsValidator.js';
@@ -56,8 +57,31 @@ export class RipsImportService {
         }
     }
 
-    static async createControl(data, transaction) {
-        const { id_system_user, id_prestador, periodo_fac, anio, route, status } = data;
+    /**
+     * Busca un control ACTIVO con el mismo número de cuenta de cobro para
+     * anexarle una nueva factura (mismo radicado). Si no existe, crea uno nuevo.
+     */
+    static async findOrCreateControl(data, transaction) {
+        const { id_system_user, id_prestador, periodo_fac, anio, route, status, numero_cuenta_cobro } = data;
+        const cuentaCobro = numero_cuenta_cobro ? String(numero_cuenta_cobro).trim() : null;
+
+        if (cuentaCobro) {
+            const existingControl = await Control.findOne({
+                where: {
+                    numero_cuenta_cobro: cuentaCobro,
+                    status: 'ACT',
+                },
+                transaction,
+            });
+
+            if (existingControl) {
+                logger.info('Anexando factura a control existente', {
+                    controlId: existingControl.id,
+                    numero_cuenta_cobro: cuentaCobro
+                });
+                return { control: existingControl, isNew: false };
+            }
+        }
 
         logger.info('Creando control...', {
             id_system_user,
@@ -65,23 +89,36 @@ export class RipsImportService {
             periodo_fac,
             anio,
             route,
-            status
+            status,
+            numero_cuenta_cobro: cuentaCobro
         });
 
-        const control = await Control.create(
-            {
-                id_system_user,
-                id_prestador,
-                periodo_fac: parseIntSafe(periodo_fac),
-                ['año']: parseIntSafe(anio),
-                route,
-                status: normalizeStatus(status),
-            },
-            { transaction }
-        );
+        let control;
+        try {
+            control = await Control.create(
+                {
+                    id_system_user,
+                    id_prestador,
+                    periodo_fac: parseIntSafe(periodo_fac),
+                    ['año']: parseIntSafe(anio),
+                    route,
+                    status: normalizeStatus(status),
+                    numero_cuenta_cobro: cuentaCobro,
+                },
+                { transaction }
+            );
+        } catch (error) {
+            if (error instanceof UniqueConstraintError) {
+                throw createError(
+                    409,
+                    `Ya existe una factura registrada con el número de cuenta de cobro ${cuentaCobro}.`
+                );
+            }
+            throw error;
+        }
 
         logger.info('Control creado con ID:', control.id);
-        return control;
+        return { control, isNew: true };
     }
 
     static async createTransaction(controlId, invoiceData, userCacheManager, transaction) {
@@ -134,7 +171,8 @@ export class RipsImportService {
             anio,
             status,
             route,
-            ripsData
+            ripsData,
+            numero_cuenta_cobro
         } = requestData;
 
         const invoiceData = RipsValidator.validateRipsData(ripsData);
@@ -146,6 +184,7 @@ export class RipsImportService {
         const userCacheManager = new UserCacheManager();
 
         let control = null;
+        let isNewControl = false;
 
         await sequelize.transaction(async (t) => {
             logger.info('Iniciando transacción de importación...');
@@ -157,17 +196,20 @@ export class RipsImportService {
                 created
             );
 
-            control = await this.createControl(
+            const found = await this.findOrCreateControl(
                 {
                     id_system_user,
                     id_prestador: prestador.id,
                     periodo_fac,
                     anio,
                     route,
-                    status
+                    status,
+                    numero_cuenta_cobro
                 },
                 t
             );
+            control = found.control;
+            isNewControl = found.isNew;
             created.controlId = control.id;
 
             const trx = await this.createTransaction(
@@ -178,13 +220,16 @@ export class RipsImportService {
             );
             created.transaccionId = trx.id;
 
-            // Generar radicado: numFactura_nit_aaaammdd
-            const fecha = new Date();
-            const aaaa  = fecha.getFullYear();
-            const mm    = String(fecha.getMonth() + 1).padStart(2, '0');
-            const dd    = String(fecha.getDate()).padStart(2, '0');
-            const radicado = `${invoiceData.numFactura}_${aaaa}${mm}${dd}`;
-            await control.update({ numero_radicado: radicado }, { transaction: t });
+            // Generar radicado solo para controles nuevos: numFactura_aaaammdd.
+            // Al anexar una factura a un control existente se conserva su radicado.
+            if (isNewControl) {
+                const fecha = new Date();
+                const aaaa  = fecha.getFullYear();
+                const mm    = String(fecha.getMonth() + 1).padStart(2, '0');
+                const dd    = String(fecha.getDate()).padStart(2, '0');
+                const radicado = `${invoiceData.numFactura}_${aaaa}${mm}${dd}`;
+                await control.update({ numero_radicado: radicado }, { transaction: t });
+            }
 
             await RipsProcessorService.processRootServices(
                 ripsData,
@@ -202,6 +247,7 @@ export class RipsImportService {
         return {
             radicado: control.numero_radicado || `${new Date().getFullYear()}-${control.id}`,
             controlId: control.id,
+            reused: !isNewControl,
             created
         };
     }

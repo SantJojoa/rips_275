@@ -17,10 +17,12 @@ export default (sequelize, DataTypes) => {
     id_system_user: DataTypes.INTEGER,
     id_prestador: DataTypes.INTEGER,
     numero_radicado: DataTypes.STRING,
+    numero_cuenta_cobro: DataTypes.STRING,
     periodo_fac: DataTypes.INTEGER,
     año: DataTypes.INTEGER,
     route: DataTypes.TEXT,
     status: DataTypes.ENUM('ACT', 'INACT', 'ERROR'),
+    motivo_desactivacion: DataTypes.TEXT,
   }, {
     sequelize,
     modelName: 'Control',

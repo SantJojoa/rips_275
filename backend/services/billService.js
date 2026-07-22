@@ -5,6 +5,7 @@ import { Op } from 'sequelize';
 
 const { Transaccion, Control, Prestador, sequelize } = db;
 
+
 /**
  * Servicio para gestión de facturas
  */
@@ -28,6 +29,10 @@ export class BillService {
 
         if (filters.prestador_id) {
             controlWhere.id_prestador = filters.prestador_id;
+        }
+
+        if (filters.numero_cuenta_cobro) {
+            controlWhere.numero_cuenta_cobro = { [Op.iLike]: `%${filters.numero_cuenta_cobro}%` };
         }
 
         // Construir filtros para Transaccion
@@ -59,7 +64,8 @@ export class BillService {
                         'status',
                         'createdAt',
                         'updatedAt',
-                        'numero_radicado'
+                        'numero_radicado',
+                        'numero_cuenta_cobro'
                     ]
                 }
             ],
@@ -147,7 +153,7 @@ export class BillService {
     /**
      * Soft delete de una factura (cambiar status del control a INACT)
      */
-    static async softDeleteBill(id) {
+    static async softDeleteBill(id, motivo = null) {
         logger.info('Desactivando factura', { id });
 
         const factura = await this.getBillById(id);
@@ -156,12 +162,46 @@ export class BillService {
             throw createError(400, 'La factura no tiene control asociado');
         }
 
-        // Cambiar status del control a INACT en lugar de borrar
-        await factura.Control.update({ status: 'INACT' });
+        await factura.Control.update({ status: 'INACT', motivo_desactivacion: motivo || null });
 
         logger.info('Factura desactivada exitosamente', { id });
 
         return { message: 'Factura desactivada correctamente' };
+    }
+
+    static async getInactiveBills() {
+        logger.info('Obteniendo facturas inactivas');
+
+        const { sequelize: seq } = db;
+
+        const rows = await seq.query(`
+            SELECT
+                c.id                  AS control_id,
+                c.numero_radicado,
+                c.numero_cuenta_cobro,
+                c.periodo_fac,
+                c."año",
+                c."createdAt"         AS fecha,
+                c."updatedAt"         AS fecha_desactivacion,
+                c.motivo_desactivacion,
+                c.id_system_user,
+                su.username,
+                su.nombres            AS usuario_nombres,
+                su.apellidos          AS usuario_apellidos,
+                t.id                  AS transaccion_id,
+                t.num_factura,
+                t.num_nit,
+                t.valor_factura,
+                p.nombre_prestador
+            FROM control c
+            LEFT JOIN transaccion  t  ON t.id_control  = c.id
+            LEFT JOIN prestadores  p  ON p.id           = c.id_prestador
+            LEFT JOIN system_users su ON su.id          = c.id_system_user
+            WHERE c.status = 'INACT'
+            ORDER BY c."updatedAt" DESC
+        `, { type: seq.QueryTypes.SELECT });
+
+        return rows;
     }
 
     /**

@@ -26,7 +26,8 @@ export default (sequelize, DataTypes) => {
     valor_factura: DataTypes.FLOAT,
     tipo_nota: DataTypes.STRING,
     num_nota: DataTypes.STRING,
-    fecha: DataTypes.DATE
+    fecha: DataTypes.DATE,
+    route: DataTypes.TEXT
   }, {
     sequelize,
     modelName: 'Transaccion',
