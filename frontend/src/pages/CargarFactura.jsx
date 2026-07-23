@@ -115,11 +115,29 @@ function extractFromXml(text) {
         qrNumFac = numFacMatch?.[1]?.trim() || null;
     }
 
+    // <cbc:ID>VALUE</cbc:ID>  (ID raíz del documento, último fallback)
+    const idMatch = text.match(/<[^:>]*:?ID(?:\s[^>]*)?>([^<]+)<\/[^:>]*:?ID>/i);
+    const documentID = idMatch?.[1]?.trim() || null;
+
     // <cac:LegalMonetaryTotal><cbc:LineExtensionAmount currencyID="COP">VALUE</cbc:LineExtensionAmount>
     const lineExtMatch = text.match(/<[^:>]*:?LineExtensionAmount[^>]*>([^<]+)<\/[^:>]*:?LineExtensionAmount>/i);
     const lineExtensionAmount = lineExtMatch?.[1]?.trim() || null;
 
-    return { parentDocumentID, qrNumFac, lineExtensionAmount };
+    // Referencia de factura del XML: QRCode NumFac > ParentDocumentID > ID (fallback si el anterior no está presente)
+    let facturaRef = null;
+    let facturaRefSource = null;
+    if (qrNumFac) {
+        facturaRef = qrNumFac;
+        facturaRefSource = 'QRCode NumFac';
+    } else if (parentDocumentID) {
+        facturaRef = parentDocumentID;
+        facturaRefSource = 'ParentDocumentID';
+    } else if (documentID) {
+        facturaRef = documentID;
+        facturaRefSource = 'ID';
+    }
+
+    return { parentDocumentID, qrNumFac, documentID, lineExtensionAmount, facturaRef, facturaRefSource };
 }
 
 // ─── Dropzone ────────────────────────────────────────────────────────────────
@@ -439,20 +457,12 @@ function InvoiceItemCard({ index, item, canRemove, onFile, onClear, onValidar, o
                                 ok={result.checks.cuvVsRip}
                             />
                             <MatchRow
-                                label="Factura (CUV) = ParentDocumentID (XML)"
+                                label={`Factura (CUV) = ${result.xmlFacturaRefSource || 'XML'} (XML)`}
                                 values={[
                                     { src: 'CUV · Factura', val: result.cuvFactura },
-                                    { src: 'XML · ParentDocumentID', val: result.xmlParentDoc },
+                                    { src: `XML · ${result.xmlFacturaRefSource || 'sin dato'}`, val: result.xmlFacturaRef },
                                 ]}
-                                ok={result.checks.cuvVsXmlParent}
-                            />
-                            <MatchRow
-                                label="Factura (CUV) = QRCode NumFac (XML)"
-                                values={[
-                                    { src: 'CUV · Factura', val: result.cuvFactura },
-                                    { src: 'XML · QRCode NumFac', val: result.xmlQrNumFac },
-                                ]}
-                                ok={result.checks.cuvVsXmlQr}
+                                ok={result.checks.cuvVsXml}
                             />
                         </div>
                     </Collapsible>
@@ -714,6 +724,10 @@ export default function CargarFactura() {
             const ripNumFactura = parsed.rip?.numFactura ? String(parsed.rip.numFactura).trim() : null;
             const xmlParentDoc = parsed.xml?.parentDocumentID ? String(parsed.xml.parentDocumentID).trim() : null;
             const xmlQrNumFac = parsed.xml?.qrNumFac ? String(parsed.xml.qrNumFac).trim() : null;
+            const xmlDocumentID = parsed.xml?.documentID ? String(parsed.xml.documentID).trim() : null;
+            // Referencia de factura del XML con fallback: QRCode NumFac > ParentDocumentID > ID
+            const xmlFacturaRef = parsed.xml?.facturaRef ? String(parsed.xml.facturaRef).trim() : null;
+            const xmlFacturaRefSource = parsed.xml?.facturaRefSource || null;
 
             // Normalizar quitando ceros a la izquierda
             const normalize = (v) => {
@@ -724,25 +738,20 @@ export default function CargarFactura() {
 
             const nCuvFactura = normalize(cuvFactura);
             const nRip = normalize(ripNumFactura);
-            const nXmlParent = normalize(xmlParentDoc);
-            const nXmlQr = normalize(xmlQrNumFac);
+            const nXmlRef = normalize(xmlFacturaRef);
 
             // Referencia: el valor que tienen en común (usamos el del CUV como ancla)
             const ref = nCuvFactura;
 
             const checks = {
                 cuvVsRip: ref !== null && nRip !== null && nCuvFactura === nRip,
-                cuvVsXmlParent: ref !== null && nXmlParent !== null && nCuvFactura === nXmlParent,
-                cuvVsXmlQr: ref !== null && nXmlQr !== null && nCuvFactura === nXmlQr,
-                ripVsXmlParent: nRip !== null && nXmlParent !== null && nRip === nXmlParent,
-                ripVsXmlQr: nRip !== null && nXmlQr !== null && nRip === nXmlQr,
-                xmlParentVsQr: nXmlParent !== null && nXmlQr !== null && nXmlParent === nXmlQr,
+                cuvVsXml: ref !== null && nXmlRef !== null && nCuvFactura === nXmlRef,
+                ripVsXml: nRip !== null && nXmlRef !== null && nRip === nXmlRef,
             };
 
             const allMatch = nCuvFactura !== null
                 && nCuvFactura === nRip
-                && nCuvFactura === nXmlParent
-                && nCuvFactura === nXmlQr;
+                && nCuvFactura === nXmlRef;
 
             // Validación de valor: TotalFactura API vs LineExtensionAmount XML
             const apiTotal = apiData.TotalFactura != null ? Number(apiData.TotalFactura) : null;
@@ -757,7 +766,8 @@ export default function CargarFactura() {
                 loading: false,
                 result: {
                     apiData, isValid, cuvMatch, cuvCode, apiCuv,
-                    cuvFactura, ripNumFactura, xmlParentDoc, xmlQrNumFac,
+                    cuvFactura, ripNumFactura, xmlParentDoc, xmlQrNumFac, xmlDocumentID,
+                    xmlFacturaRef, xmlFacturaRefSource,
                     checks, allMatch,
                     apiTotal, xmlLineExt, valorMatch,
                 },

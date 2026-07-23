@@ -78,34 +78,35 @@ export default function Login() {
     };
 
     return (
-        <div className={clsx('min-h-dvh', 'flex')} style={{ backgroundColor: '#FBFBFA' }}>
+        <div className="min-h-dvh flex" style={{ backgroundColor: '#ffffff' }}>
             {/* Left panel */}
-            <div className={clsx('hidden', 'lg:flex', 'lg:w-1/2', 'flex-col', 'justify-between', 'p-12')} style={{ backgroundColor: '#111111' }}>
-                <div className={clsx('fade-up', 'fade-up-1')}>
-                    <img src="logo-instituto.png" alt="Logo IDSN" className={clsx('h-10', 'w-auto', 'object-contain', 'brightness-0', 'invert', 'opacity-90')} />
+            <div className="hidden lg:flex lg:w-1/2 flex-col justify-between p-12" style={{ backgroundColor: '#111111' }}>
+                <div className="fade-up fade-up-1">
+                    <img src="logo-instituto.png" alt="Logo IDSN" className="h-10 w-auto object-contain brightness-0 invert opacity-90" />
                 </div>
-                <div className={clsx('fade-up', 'fade-up-2')}>
-                    <p className={clsx('text-[#EAEAEA]', 'text-3xl', 'font-medium', 'leading-snug', 'tracking-tight')} style={{ maxWidth: '360px' }}>
+                <div className="fade-up fade-up-2">
+                    <p className="text-[#EAEAEA] text-3xl font-medium leading-snug tracking-tight" style={{ maxWidth: '360px' }}>
                         Gestión de registros individuales de prestación de servicios de salud.
                     </p>
-                    <p className={clsx('mt-4', 'text-sm', 'text-[#787774]')}>Instituto Departamental de Salud de Nariño</p>
+                    <p className="mt-4 text-sm text-[#787774]">Instituto Departamental de Salud de Nariño</p>
                 </div>
-                <p className={clsx('text-xs', 'text-[#444]')} style={{ fontFamily: 'var(--font-mono)' }}>FEV-RIPS · v0.1.0</p>
-                <p className={clsx('text-xs', 'text-[#444]')} style={{ fontFamily: 'var(--font-mono)' }}>Version API MINISTERIO DE SALUD· v1.4.10.1 15/07/2026</p>
-
+                <div className="space-y-1" style={{ fontFamily: 'var(--font-mono)' }}>
+                    <p className="text-xs text-[#444]">FEV-RIPS · v0.1.0</p>
+                    <p className="text-xs text-[#444]">Version API MINISTERIO DE SALUD· v1.4.10.1 15/07/2026</p>
+                </div>
             </div>
 
             {/* Right panel */}
-            <div className={clsx('flex', 'flex-1', 'flex-col', 'justify-center', 'px-8', 'py-12', 'lg:px-16')}>
-                <div className={clsx('w-full', 'max-w-sm', 'mx-auto', 'fade-up', 'fade-up-1')}>
-                    <img src="logo-instituto.png" alt="Logo IDSN" className={clsx('lg:hidden', 'h-10', 'w-auto', 'object-contain', 'mb-8')} />
+            <div className="flex flex-1 flex-col justify-center px-8 py-12 lg:px-16">
+                <div className="w-full max-w-sm mx-auto fade-up fade-up-1">
+                    <img src="logo-instituto.png" alt="Logo IDSN" className="lg:hidden h-10 w-auto object-contain mb-8" />
 
-                    <h1 className={clsx('text-2xl', 'font-semibold', 'text-[#111111]', 'tracking-tight')}>Iniciar sesión</h1>
-                    <p className={clsx('mt-2', 'text-sm', 'text-[#787774]')}>Ingresa tus credenciales para acceder al sistema.</p>
+                    <h1 className="text-2xl font-semibold text-[#111111] tracking-tight">Iniciar sesión</h1>
+                    <p className="mt-2 text-sm text-[#787774]">Ingresa tus credenciales para acceder al sistema.</p>
 
-                    <form className={clsx('mt-8', 'space-y-4')} onSubmit={handleSubmit}>
+                    <form className="mt-8 space-y-4" onSubmit={handleSubmit}>
                         <div>
-                            <label className={clsx('block', 'text-sm', 'font-medium', 'text-[#111111]', 'mb-1.5')}>Usuario</label>
+                            <label className="block text-sm font-medium text-[#111111] mb-1.5">Usuario</label>
                             <input
                                 type="text"
                                 value={username}
@@ -116,12 +117,12 @@ export default function Login() {
                                 style={inputStyle}
                                 onFocus={onFocus}
                                 onBlur={onBlur}
-                                className={clsx('w-full', 'px-3', 'py-2.5', 'text-sm', 'text-[#111111]', 'placeholder:text-[#c0bfbd]', 'transition-all', 'duration-150')}
+                                className="w-full px-3 py-2.5 text-sm text-[#111111] placeholder:text-[#c0bfbd] transition-all duration-150"
                             />
                         </div>
 
                         <div>
-                            <label className={clsx('block', 'text-sm', 'font-medium', 'text-[#111111]', 'mb-1.5')}>Contraseña</label>
+                            <label className="block text-sm font-medium text-[#111111] mb-1.5">Contraseña</label>
                             <div className="relative">
                                 <input
                                     type={showPassword ? 'text' : 'password'}
@@ -133,12 +134,12 @@ export default function Login() {
                                     style={inputStyle}
                                     onFocus={onFocus}
                                     onBlur={onBlur}
-                                    className={clsx('w-full', 'px-3', 'py-2.5', 'pr-10', 'text-sm', 'text-[#111111]', 'placeholder:text-[#c0bfbd]', 'transition-all', 'duration-150')}
+                                    className="w-full px-3 py-2.5 pr-10 text-sm text-[#111111] placeholder:text-[#c0bfbd] transition-all duration-150"
                                 />
                                 <button
                                     type="button"
                                     onClick={() => setShowPassword(v => !v)}
-                                    className={clsx('absolute', 'right-3', 'top-1/2', '-translate-y-1/2', 'text-[#787774]', 'hover:text-[#111111]', 'transition-colors')}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#787774] hover:text-[#111111] transition-colors"
                                     tabIndex={-1}
                                 >
                                     <EyeIcon open={showPassword} />
@@ -146,19 +147,19 @@ export default function Login() {
                             </div>
                         </div>
 
-                        <label className={clsx('flex', 'items-center', 'gap-2', 'cursor-pointer', 'select-none')}>
+                        <label className="flex items-center gap-2 cursor-pointer select-none">
                             <input
                                 type="checkbox"
                                 checked={remember}
                                 onChange={e => setRemember(e.target.checked)}
-                                className={clsx('w-4', 'h-4', 'rounded', 'accent-[#462882]', 'cursor-pointer')}
+                                className="w-4 h-4 rounded accent-[#462882] cursor-pointer"
                             />
-                            <span className={clsx('text-sm', 'text-[#787774]')}>Recordar usuario</span>
+                            <span className="text-sm text-[#787774]">Recordar usuario</span>
                         </label>
 
                         {error && (
                             <div style={{ border: '1px solid #f5c6c6', borderRadius: '6px', backgroundColor: '#FDEBEC' }}
-                                className={clsx('px-3', 'py-2.5', 'text-sm', 'text-[#9F2F2D]')}>
+                                className="px-3 py-2.5 text-sm text-[#9F2F2D]">
                                 {error}
                             </div>
                         )}
@@ -173,7 +174,7 @@ export default function Login() {
                             }}
                             onMouseDown={e => { if (!loading) e.currentTarget.style.transform = 'scale(0.98)'; }}
                             onMouseUp={e => { e.currentTarget.style.transform = 'scale(1)'; }}
-                            className={clsx('w-full', 'mt-2', 'py-2.5', 'text-sm', 'font-semibold', 'text-white', 'cursor-pointer', 'disabled:cursor-not-allowed')}
+                            className="w-full mt-2 py-2.5 text-sm font-semibold text-white cursor-pointer disabled:cursor-not-allowed"
                         >
                             {loading ? 'Verificando...' : 'Ingresar'}
                         </button>
