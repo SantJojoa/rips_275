@@ -62,5 +62,8 @@ services:
       - backend
     ports:
       - "80:80"
+      - "443:443"
+    volumes:
+      - ${SSL_CERTS_PATH}:/etc/nginx/certs:ro
     networks:
       - rips-net

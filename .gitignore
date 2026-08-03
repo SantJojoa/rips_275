@@ -147,3 +147,9 @@ backend/uploads/*
 
 # Directorio de uploads en Docker
 backend/uploads/*
+
+# Certificados SSL (no deben ir al repo)
+certs/
+*.pfx
+*.pem
+*.key
