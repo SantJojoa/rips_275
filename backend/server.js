@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors'
 import authRoutes from './routes/auth.js';
 import billsRoutes from './routes/billRoutes.js';
+import userRoutes from './routes/userRoutes.js';
 import db from './models/index.js';
 
 
@@ -27,6 +28,7 @@ if (process.env.NODE_TLS_REJECT_UNAUTHORIZED === '0') {
 // Rutas de autenticación (incluyen rutas de importación RIPS)
 app.use('/api/auth', authRoutes);
 app.use('/api/bills', billsRoutes);
+app.use('/api/users', userRoutes);
 
 
 const PORT = process.env.PORT || 3000;

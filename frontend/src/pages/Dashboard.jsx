@@ -1,11 +1,12 @@
 import { useNavigate } from 'react-router-dom';
 import { getUser, isAdmin, isSuperAdmin } from '../lib/auth';
-import { Search, UserPlus, List, Database, FileStack } from "lucide-react";
+import { Search, UserPlus, Users, List, Database, FileStack } from "lucide-react";
 
 const MODULE_ICONS = {
     Database:  { bg: '#EDF3EC', color: '#346538' },
     Search:    { bg: '#E1F3FE', color: '#1F6C9F' },
     UserPlus:  { bg: '#FBF3DB', color: '#956400' },
+    Users:     { bg: '#FBF3DB', color: '#956400' },
     List:      { bg: '#F3EEFE', color: '#7C3AED' },
     FileStack: { bg: '#F3EEFE', color: '#7C3AED' },
 };
@@ -161,6 +162,12 @@ export default function Dashboard() {
                                     description="Crea nuevos usuarios para el sistema."
                                     icon={UserPlus} iconName="UserPlus"
                                     action={() => navigate('/crear-usuario')}
+                                />
+                                <ModuleCard
+                                    title="Gestionar Usuarios"
+                                    description="Edita, elimina y administra los usuarios del sistema."
+                                    icon={Users} iconName="Users"
+                                    action={() => navigate('/gestionar-usuarios')}
                                 />
                             </Section>
                         </div>

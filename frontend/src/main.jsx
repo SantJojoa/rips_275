@@ -12,6 +12,7 @@ import { AdminRoute, SuperAdminRoute } from './components/RouteGuards.jsx'
 import NotFound from './pages/NotFound.jsx'
 import ListBills from './pages/ListBills.jsx'
 import CreateUser from './pages/CreateUser.jsx'
+import ManageUsers from './pages/ManageUsers.jsx'
 import SearchCuv from './pages/SearchCuv.jsx'
 import CargarFactura from './pages/CargarFactura.jsx'
 
@@ -58,6 +59,7 @@ createRoot(document.getElementById('root')).render(
         <Route path="/gestionar-facturas" element={<AdminRoute><Layout><ListBills /></Layout></AdminRoute>} />
         <Route path="/cargar-factura" element={withPrivateLayout(<CargarFactura />)} />
         <Route path="/crear-usuario" element={<SuperAdminRoute><Layout><CreateUser /></Layout></SuperAdminRoute>} />
+        <Route path="/gestionar-usuarios" element={<SuperAdminRoute><Layout><ManageUsers /></Layout></SuperAdminRoute>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
