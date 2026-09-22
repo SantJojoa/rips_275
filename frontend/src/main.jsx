@@ -3,8 +3,9 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { getToken, isTokenExpired, clearToken } from './lib/auth'
+import { getToken, isTokenExpired, clearToken, mustChangePassword } from './lib/auth'
 import Login from './pages/Login.jsx'
+import ChangePassword from './pages/ChangePassword.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import Consultar from './pages/Consultar.jsx'
 import Layout from './components/Layout.jsx'
@@ -25,7 +26,9 @@ const withPrivateLayout = (children) => {
     clearToken();
     return <Navigate to="/login" />;
   }
-  return token ? <Layout>{children}</Layout> : <Navigate to="/login" />;
+  if (!token) return <Navigate to="/login" />;
+  if (mustChangePassword()) return <Navigate to="/cambiar-password" replace />;
+  return <Layout>{children}</Layout>;
 };
 
 const RootRedirect = () => {
@@ -34,7 +37,9 @@ const RootRedirect = () => {
     clearToken();
     return <Navigate to="/login" />;
   }
-  return token ? <Navigate to="/dashboard" /> : <Navigate to="/login" />;
+  if (!token) return <Navigate to="/login" />;
+  if (mustChangePassword()) return <Navigate to="/cambiar-password" replace />;
+  return <Navigate to="/dashboard" />;
 };
 
 createRoot(document.getElementById('root')).render(
@@ -53,6 +58,7 @@ createRoot(document.getElementById('root')).render(
       <Routes>
         <Route path="/" element={<RootRedirect />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/cambiar-password" element={getToken() ? <ChangePassword /> : <Navigate to="/login" replace />} />
         <Route path="/dashboard" element={withPrivateLayout(<Dashboard />)} />
         <Route path="/consultar" element={withPrivateLayout(<Consultar />)} />
         <Route path="/consultar-cuv" element={<AdminRoute><Layout><SearchCuv /></Layout></AdminRoute>} />

@@ -1,5 +1,5 @@
 import express from "express"
-import { login, getProfile, createUser } from '../controllers/authController.js'
+import { login, getProfile, createUser, changePassword } from '../controllers/authController.js'
 import { authenticate, authorize, authorizeSuperAdmin } from '../middlewares/auth.js'
 import { uploadRipsJson, uploadRipsJsonFile } from '../controllers/importController.js'
 import { searchByFactura, consultarCUV, compareCuvXml, compareCuvXmlBatch } from '../controllers/queryControllers.js'
@@ -16,6 +16,7 @@ const router = express.Router()
 router.post('/login', login);
 router.get('/profile', authenticate, getProfile);
 router.post('/create-user', authenticate, authorizeSuperAdmin, createUser);
+router.put('/change-password', authenticate, changePassword);
 
 
 

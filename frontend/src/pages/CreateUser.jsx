@@ -73,6 +73,8 @@ export default function CreateUser() {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+    const isPrestador = formData.role === 'USER';
+
     useEffect(() => {
         apiFetch('/api/auth/prestadores')
             .then(r => r.json())
@@ -85,38 +87,56 @@ export default function CreateUser() {
         label: `${p.nombre || p.id}${p.nit ? ' · NIT: ' + p.nit : ''}${p.cod ? ' (' + p.cod + ')' : ''}`,
     }));
 
+    const selectedPrestador = prestadores.find(p => p.id === prestadorId) || null;
+
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
+    const resetForm = () => {
+        setFormData({ username: '', nombres: '', apellidos: '', cedula: '', password: '', confirmPassword: '', role: 'USER' });
+        setPrestadorId(null);
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!formData.username || !formData.nombres || !formData.apellidos || !formData.cedula || !formData.password)
-            return showError('Todos los campos son obligatorios');
-        if (formData.password !== formData.confirmPassword)
-            return showError('Las contraseñas no coinciden');
-        if (formData.password.length < 6)
-            return showError('La contraseña debe tener al menos 6 caracteres');
-        if (formData.role === 'USER' && !prestadorId)
-            return showError('Los usuarios deben estar asociados a un prestador');
+
+        if (isPrestador) {
+            if (!formData.nombres.trim())
+                return showError('El nombre del prestador es obligatorio');
+            if (!prestadorId)
+                return showError('Debes seleccionar un prestador');
+            if (!selectedPrestador?.nit)
+                return showError('El prestador seleccionado no tiene NIT configurado');
+        } else {
+            if (!formData.username || !formData.nombres || !formData.apellidos || !formData.cedula || !formData.password)
+                return showError('Todos los campos son obligatorios');
+            if (formData.password !== formData.confirmPassword)
+                return showError('Las contraseñas no coinciden');
+            if (formData.password.length < 6)
+                return showError('La contraseña debe tener al menos 6 caracteres');
+        }
 
         setLoading(true);
         try {
-            const res = await apiFetch('/api/auth/create-user', {
-                method: 'POST',
-                body: JSON.stringify({
+            const payload = isPrestador
+                ? { nombres: formData.nombres, role: 'USER', id_prestador: prestadorId }
+                : {
                     username: formData.username, nombres: formData.nombres,
                     apellidos: formData.apellidos, cedula: formData.cedula,
                     password: formData.password, role: formData.role,
                     id_prestador: prestadorId || null,
-                })
+                };
+
+            const res = await apiFetch('/api/auth/create-user', {
+                method: 'POST',
+                body: JSON.stringify(payload)
             });
             const data = await res.json();
             if (!res.ok) return showError(data?.message || 'Error al crear el usuario');
             showSuccess(data?.message || 'Usuario creado exitosamente');
-            setFormData({ username: '', nombres: '', apellidos: '', cedula: '', password: '', confirmPassword: '', role: 'USER' });
-            setPrestadorId(null);
+            resetForm();
         } catch (error) {
             showError(error?.message || 'Error al crear el usuario');
         } finally {
@@ -125,7 +145,7 @@ export default function CreateUser() {
     };
 
     return (
-        <div className="fade-up fade-up-1">
+        <div className="fade-up fade-up-1 max-w-2xl mx-auto">
             <div className="mb-6">
                 <h1 className="text-xl font-semibold text-[#111111] tracking-tight">Crear Usuario</h1>
                 <p className="mt-1 text-sm text-[#787774]">
@@ -134,60 +154,9 @@ export default function CreateUser() {
             </div>
 
             <div style={{ border: '1px solid #EAEAEA', borderRadius: '8px', backgroundColor: '#ffffff' }}
-                className="p-6 max-w-2xl">
+                className="p-6">
                 <form onSubmit={handleSubmit} className="space-y-5">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <Field label="Nombres">
-                            <StyledInput type="text" name="nombres" value={formData.nombres}
-                                onChange={handleChange} placeholder="Nombres completos" required />
-                        </Field>
-                        <Field label="Apellidos">
-                            <StyledInput type="text" name="apellidos" value={formData.apellidos}
-                                onChange={handleChange} placeholder="Apellidos completos" required />
-                        </Field>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <Field label="Cedula">
-                            <StyledInput type="text" name="cedula" value={formData.cedula}
-                                onChange={handleChange} placeholder="Numero de cedula" required />
-                        </Field>
-                        <Field label="Username">
-                            <StyledInput type="text" name="username" value={formData.username}
-                                onChange={handleChange} placeholder="Nombre de usuario" required />
-                        </Field>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <Field label="Contrasena">
-                            <div className="relative">
-                                <StyledInput
-                                    type={showPassword ? 'text' : 'password'}
-                                    name="password" value={formData.password}
-                                    onChange={handleChange} placeholder="••••••••"
-                                    style={{ paddingRight: '40px' }} required />
-                                <button type="button" onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#787774] hover:text-[#111111] transition-colors cursor-pointer">
-                                    {showPassword ? <EyeOff className="w-4 h-4" strokeWidth={1.5} /> : <Eye className="w-4 h-4" strokeWidth={1.5} />}
-                                </button>
-                            </div>
-                        </Field>
-                        <Field label="Confirmar contrasena">
-                            <div className="relative">
-                                <StyledInput
-                                    type={showConfirmPassword ? 'text' : 'password'}
-                                    name="confirmPassword" value={formData.confirmPassword}
-                                    onChange={handleChange} placeholder="••••••••"
-                                    style={{ paddingRight: '40px' }} required />
-                                <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#787774] hover:text-[#111111] transition-colors cursor-pointer">
-                                    {showConfirmPassword ? <EyeOff className="w-4 h-4" strokeWidth={1.5} /> : <Eye className="w-4 h-4" strokeWidth={1.5} />}
-                                </button>
-                            </div>
-                        </Field>
-                    </div>
-
-                    <Field label="Rol">
+                    <Field label="Tipo de usuario">
                         <select
                             name="role" value={formData.role} onChange={handleChange}
                             style={{ ...inputStyle, cursor: 'pointer' }}
@@ -200,27 +169,104 @@ export default function CreateUser() {
                                 e.target.style.boxShadow = 'none';
                             }}
                         >
-                            <option value="USER">Usuario</option>
+                            <option value="USER">Prestador</option>
                             <option value="ADMIN">Administrador</option>
                         </select>
                     </Field>
 
-                    <Field label={`Prestador asociado${formData.role === 'USER' ? ' *' : ' (opcional)'}`}>
-                        <Select
-                            options={prestadorOptions}
-                            value={prestadorOptions.find(o => o.value === prestadorId) || null}
-                            onChange={opt => setPrestadorId(opt ? opt.value : null)}
-                            isClearable
-                            placeholder="Buscar prestador..."
-                            styles={SELECT_STYLES}
-                            noOptionsMessage={() => 'Sin resultados'}
-                        />
-                        <p style={{ fontSize: '11px', color: '#787774', marginTop: '4px' }}>
-                            {formData.role === 'USER'
-                                ? 'El usuario solo podrá subir facturas del prestador asignado.'
-                                : 'Para roles ADMIN/SUPERADMIN el prestador es opcional.'}
-                        </p>
-                    </Field>
+                    {isPrestador ? (
+                        <>
+                            <Field label="Nombre del prestador">
+                                <StyledInput type="text" name="nombres" value={formData.nombres}
+                                    onChange={handleChange} placeholder="Nombre o razón social del prestador" required />
+                            </Field>
+
+                            <Field label="Prestador asociado *">
+                                <Select
+                                    options={prestadorOptions}
+                                    value={prestadorOptions.find(o => o.value === prestadorId) || null}
+                                    onChange={opt => setPrestadorId(opt ? opt.value : null)}
+                                    isClearable
+                                    placeholder="Buscar prestador..."
+                                    styles={SELECT_STYLES}
+                                    noOptionsMessage={() => 'Sin resultados'}
+                                />
+                            </Field>
+
+                            <div style={{ border: '1px solid #EAEAEA', borderRadius: '6px', backgroundColor: '#F9F9F8' }} className="p-3">
+                                <p style={{ fontSize: '12px', color: '#787774' }}>
+                                    El <strong>username</strong> y la <strong>contraseña</strong> iniciales serán el NIT del prestador
+                                    {selectedPrestador?.nit ? <> — <span style={{ fontFamily: 'monospace', color: '#111111', fontWeight: 600 }}>{selectedPrestador.nit}</span></> : ''}.
+                                    El sistema le pedirá cambiarla en su primer inicio de sesión.
+                                </p>
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <Field label="Nombres">
+                                    <StyledInput type="text" name="nombres" value={formData.nombres}
+                                        onChange={handleChange} placeholder="Nombres completos" required />
+                                </Field>
+                                <Field label="Apellidos">
+                                    <StyledInput type="text" name="apellidos" value={formData.apellidos}
+                                        onChange={handleChange} placeholder="Apellidos completos" required />
+                                </Field>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <Field label="Cedula">
+                                    <StyledInput type="text" name="cedula" value={formData.cedula}
+                                        onChange={handleChange} placeholder="Numero de cedula" required />
+                                </Field>
+                                <Field label="Username">
+                                    <StyledInput type="text" name="username" value={formData.username}
+                                        onChange={handleChange} placeholder="Nombre de usuario" required />
+                                </Field>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <Field label="Contrasena">
+                                    <div className="relative">
+                                        <StyledInput
+                                            type={showPassword ? 'text' : 'password'}
+                                            name="password" value={formData.password}
+                                            onChange={handleChange} placeholder="••••••••"
+                                            style={{ paddingRight: '40px' }} required />
+                                        <button type="button" onClick={() => setShowPassword(!showPassword)}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-[#787774] hover:text-[#111111] transition-colors cursor-pointer">
+                                            {showPassword ? <EyeOff className="w-4 h-4" strokeWidth={1.5} /> : <Eye className="w-4 h-4" strokeWidth={1.5} />}
+                                        </button>
+                                    </div>
+                                </Field>
+                                <Field label="Confirmar contrasena">
+                                    <div className="relative">
+                                        <StyledInput
+                                            type={showConfirmPassword ? 'text' : 'password'}
+                                            name="confirmPassword" value={formData.confirmPassword}
+                                            onChange={handleChange} placeholder="••••••••"
+                                            style={{ paddingRight: '40px' }} required />
+                                        <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-[#787774] hover:text-[#111111] transition-colors cursor-pointer">
+                                            {showConfirmPassword ? <EyeOff className="w-4 h-4" strokeWidth={1.5} /> : <Eye className="w-4 h-4" strokeWidth={1.5} />}
+                                        </button>
+                                    </div>
+                                </Field>
+                            </div>
+
+                            <Field label="Prestador asociado (opcional)">
+                                <Select
+                                    options={prestadorOptions}
+                                    value={prestadorOptions.find(o => o.value === prestadorId) || null}
+                                    onChange={opt => setPrestadorId(opt ? opt.value : null)}
+                                    isClearable
+                                    placeholder="Buscar prestador..."
+                                    styles={SELECT_STYLES}
+                                    noOptionsMessage={() => 'Sin resultados'}
+                                />
+                            </Field>
+                        </>
+                    )}
 
                     <div style={{ borderTop: '1px solid #EAEAEA' }} className="pt-4">
                         <button

@@ -24,6 +24,11 @@ export default (sequelize, DataTypes) => {
       allowNull: true,
       references: { model: 'prestadores', key: 'id' },
     },
+    must_change_password: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+    },
   }, {
     sequelize,
     modelName: 'SystemUser',

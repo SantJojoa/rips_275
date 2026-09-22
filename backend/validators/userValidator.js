@@ -35,7 +35,7 @@ export class UserValidator {
         }
 
         if (apellidos !== undefined) {
-            if (typeof apellidos !== 'string' || !apellidos.trim()) {
+            if (typeof apellidos !== 'string') {
                 throw createError(400, 'Los apellidos deben ser un texto válido');
             }
             updates.apellidos = apellidos.trim();

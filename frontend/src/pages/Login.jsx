@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { apiFetch } from '../lib/api';
-import { setToken } from '../lib/auth';
+import { setToken, mustChangePassword } from '../lib/auth';
 
 const EyeIcon = ({ open }) => open ? (
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -54,7 +54,7 @@ export default function Login() {
                 localStorage.removeItem(REMEMBER_KEY);
             }
             setToken(data.token);
-            window.location.replace('/dashboard');
+            window.location.replace(mustChangePassword() ? '/cambiar-password' : '/dashboard');
         } catch (err) {
             setError(err.message || 'Error al conectar con el servidor');
         } finally {

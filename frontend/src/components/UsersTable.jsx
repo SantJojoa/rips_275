@@ -7,7 +7,7 @@ import { fetchUsers, updateUser, deleteUser } from '../api/usersApi';
 import { getUser } from '../lib/auth';
 import { showError, showSuccess } from '../utils/toastUtils';
 
-const ROLE_LABELS = { SUPERADMIN: 'Superadmin', ADMIN: 'Administrador', USER: 'Usuario' };
+const ROLE_LABELS = { SUPERADMIN: 'Superadmin', ADMIN: 'Administrador', USER: 'Prestador' };
 const ROLE_COLORS = {
     SUPERADMIN: { bg: '#F3EEFE', color: '#7C3AED' },
     ADMIN: { bg: '#E1F3FE', color: '#1F6C9F' },
@@ -100,8 +100,8 @@ function EditUserModal({ user, prestadores, onSaved, onCancel }) {
 
     const handleSubmit = async e => {
         e.preventDefault();
-        if (!formData.username.trim() || !formData.nombres.trim() || !formData.apellidos.trim() || !formData.cedula.trim()) {
-            return showError('Todos los campos son obligatorios');
+        if (!formData.username.trim() || !formData.nombres.trim() || !formData.cedula.trim()) {
+            return showError('Username, nombres y cédula son obligatorios');
         }
         if (formData.password && formData.password.length < 6) {
             return showError('La contraseña debe tener al menos 6 caracteres');
@@ -148,8 +148,8 @@ function EditUserModal({ user, prestadores, onSaved, onCancel }) {
                         <Field label="Nombres">
                             <StyledInput name="nombres" value={formData.nombres} onChange={handleChange} required />
                         </Field>
-                        <Field label="Apellidos">
-                            <StyledInput name="apellidos" value={formData.apellidos} onChange={handleChange} required />
+                        <Field label="Apellidos (opcional para prestadores)">
+                            <StyledInput name="apellidos" value={formData.apellidos} onChange={handleChange} />
                         </Field>
                     </div>
 
@@ -167,7 +167,7 @@ function EditUserModal({ user, prestadores, onSaved, onCancel }) {
                             name="role" value={formData.role} onChange={handleChange}
                             style={{ ...inputStyle, cursor: 'pointer' }}
                         >
-                            <option value="USER">Usuario</option>
+                            <option value="USER">Prestador</option>
                             <option value="ADMIN">Administrador</option>
                             <option value="SUPERADMIN">Superadmin</option>
                         </select>
@@ -186,8 +186,11 @@ function EditUserModal({ user, prestadores, onSaved, onCancel }) {
                     </Field>
 
                     <div style={{ borderTop: '1px solid #EAEAEA', paddingTop: 14 }}>
-                        <p style={{ fontSize: 12, fontWeight: 600, color: '#787774', marginBottom: 10 }}>
+                        <p style={{ fontSize: 12, fontWeight: 600, color: '#787774', marginBottom: 4 }}>
                             Cambiar contraseña (opcional)
+                        </p>
+                        <p style={{ fontSize: 11, color: '#787774', marginBottom: 10 }}>
+                            Si estableces una nueva contraseña, el usuario deberá cambiarla en su próximo inicio de sesión.
                         </p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <Field label="Nueva contraseña">

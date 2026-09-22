@@ -24,6 +24,7 @@ export const generateToken = (userData) => {
         cedula: userData.cedula,
         role: userData.role,
         id_prestador: userData.id_prestador ?? null,
+        must_change_password: userData.must_change_password ?? false,
     };
 
     return jwt.sign(

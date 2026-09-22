@@ -45,6 +45,10 @@ db.sequelize.sync()
             ALTER TABLE control
             ADD COLUMN IF NOT EXISTS motivo_desactivacion TEXT;
         `).catch(() => {});
+        await db.sequelize.query(`
+            ALTER TABLE system_users
+            ADD COLUMN IF NOT EXISTS must_change_password BOOLEAN NOT NULL DEFAULT false;
+        `).catch(() => {});
         console.log('✅ ----> Conexión exitosa a la base de datos');
         app.listen(PORT, () => {
             console.log(`✅ ----> Servidor corriendo en el puerto ${PORT}`);

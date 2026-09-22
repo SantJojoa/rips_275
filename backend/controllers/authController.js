@@ -1,4 +1,4 @@
-import { createUserService, loginService, getProfileService } from '../services/userService.js';
+import { createUserService, loginService, getProfileService, changePasswordService } from '../services/userService.js';
 import { handleControllerError } from '../utils/errorHandler.js';
 
 
@@ -26,6 +26,16 @@ export const getProfile = async (req, res) => {
     try {
         const user = await getProfileService(req.user.id);
         res.status(200).json({ message: 'Perfil obtenido exitosamente', user });
+    } catch (error) {
+        handleControllerError(res, error);
+    }
+};
+
+export const changePassword = async (req, res) => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+        const { token } = await changePasswordService(req.user.id, currentPassword, newPassword);
+        res.status(200).json({ message: 'Contraseña actualizada correctamente', token });
     } catch (error) {
         handleControllerError(res, error);
     }

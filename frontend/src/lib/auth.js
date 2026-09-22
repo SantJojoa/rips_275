@@ -42,8 +42,8 @@ export function getUser() {
 
     const payload = parseJwt(token);
     if (!payload) return null;
-    const { id, username, role } = payload || {};
-    return { id, username, role };
+    const { id, username, role, must_change_password } = payload || {};
+    return { id, username, role, must_change_password };
 }
 
 export function isAdmin() {
@@ -53,4 +53,8 @@ export function isAdmin() {
 
 export function isSuperAdmin() {
     return getUser()?.role === 'SUPERADMIN';
+}
+
+export function mustChangePassword() {
+    return !!getUser()?.must_change_password;
 }
