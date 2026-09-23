@@ -9,6 +9,7 @@ import ChangePassword from './pages/ChangePassword.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import Consultar from './pages/Consultar.jsx'
 import Layout from './components/Layout.jsx'
+import ManagePrestadores from './pages/ManagePrestadores.jsx'
 import { AdminRoute, SuperAdminRoute } from './components/RouteGuards.jsx'
 import NotFound from './pages/NotFound.jsx'
 import ListBills from './pages/ListBills.jsx'
@@ -66,6 +67,7 @@ createRoot(document.getElementById('root')).render(
         <Route path="/cargar-factura" element={withPrivateLayout(<CargarFactura />)} />
         <Route path="/crear-usuario" element={<SuperAdminRoute><Layout><CreateUser /></Layout></SuperAdminRoute>} />
         <Route path="/gestionar-usuarios" element={<SuperAdminRoute><Layout><ManageUsers /></Layout></SuperAdminRoute>} />
+        <Route path="/gestionar-prestadores" element={<SuperAdminRoute><Layout><ManagePrestadores /></Layout></SuperAdminRoute>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>

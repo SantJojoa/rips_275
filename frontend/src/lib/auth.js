@@ -42,8 +42,8 @@ export function getUser() {
 
     const payload = parseJwt(token);
     if (!payload) return null;
-    const { id, username, role, must_change_password } = payload || {};
-    return { id, username, role, must_change_password };
+    const { id, username, nombres, apellidos, role, must_change_password } = payload || {};
+    return { id, username, nombres, apellidos, role, must_change_password };
 }
 
 export function isAdmin() {

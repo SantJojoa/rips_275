@@ -5,6 +5,9 @@ import Select from 'react-select';
 import { apiFetch } from '../lib/api';
 import { fetchUsers, updateUser, deleteUser } from '../api/usersApi';
 import { getUser } from '../lib/auth';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
+import { Download } from 'lucide-react';
 import { showError, showSuccess } from '../utils/toastUtils';
 
 const ROLE_LABELS = { SUPERADMIN: 'Superadmin', ADMIN: 'Administrador', USER: 'Prestador' };
@@ -317,6 +320,24 @@ export default function UsersTable() {
         }
     };
 
+    const exportarExcel = () => {
+        const rows = filtrados.map(u => ({
+            Usuario: u.username,
+            Nombres: u.nombres || '',
+            Apellidos: u.apellidos || '',
+            Cédula: u.cedula || '',
+            Rol: ROLE_LABELS[u.role] || u.role,
+            Prestador: u.prestador?.nombre_prestador || '',
+            'NIT prestador': u.prestador?.nit || '',
+            'Creado': u.createdAt ? new Date(u.createdAt).toLocaleDateString('es-CO') : '',
+        }));
+        const ws = XLSX.utils.json_to_sheet(rows);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Usuarios');
+        const buf = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+        saveAs(new Blob([buf], { type: 'application/octet-stream' }), `usuarios_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    };
+
     const labelStyle = { display: 'block', fontSize: 11, fontWeight: 600, color: '#787774', textTransform: 'uppercase', marginBottom: 4 };
 
     return (
@@ -326,6 +347,15 @@ export default function UsersTable() {
                     <h1 className="text-xl font-semibold text-[#111111] tracking-tight">Gestionar usuarios</h1>
                     <p className="mt-1 text-sm text-[#787774]">Edita, elimina y administra los usuarios del sistema.</p>
                 </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                <button
+                    onClick={exportarExcel}
+                    disabled={loading || filtrados.length === 0}
+                    style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 8, border: '1px solid #EAEAEA', backgroundColor: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#111111' }}
+                >
+                    <Download style={{ width: 14, height: 14 }} />
+                    Exportar Excel
+                </button>
                 <button
                     onClick={cargar}
                     disabled={loading}
@@ -334,6 +364,7 @@ export default function UsersTable() {
                     <RefreshCw style={{ width: 14, height: 14 }} className={loading ? 'animate-spin' : ''} />
                     Actualizar
                 </button>
+                </div>
             </div>
 
             <div style={{ border: '1px solid #EAEAEA', borderRadius: 10, backgroundColor: '#fff', padding: '14px 18px', marginBottom: 16 }}>

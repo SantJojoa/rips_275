@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { getUser, isAdmin, isSuperAdmin } from '../lib/auth';
-import { Search, UserPlus, Users, List, Database, FileStack } from "lucide-react";
+import { Search, UserPlus, Users, List, Database, FileStack, Building2 } from "lucide-react";
 
 const MODULE_ICONS = {
     Database:  { bg: '#EDF3EC', color: '#346538' },
@@ -9,6 +9,7 @@ const MODULE_ICONS = {
     Users:     { bg: '#FBF3DB', color: '#956400' },
     List:      { bg: '#F3EEFE', color: '#7C3AED' },
     FileStack: { bg: '#F3EEFE', color: '#7C3AED' },
+    Building2: { bg: '#EDF3EC', color: '#346538' },
 };
 
 function ModuleCard({ title, description, icon: Icon, action, iconName }) {
@@ -168,6 +169,12 @@ export default function Dashboard() {
                                     description="Edita, elimina y administra los usuarios del sistema."
                                     icon={Users} iconName="Users"
                                     action={() => navigate('/gestionar-usuarios')}
+                                />
+                                <ModuleCard
+                                    title="Gestionar Prestadores"
+                                    description="Crea y edita los prestadores de servicios de salud."
+                                    icon={Building2} iconName="Building2"
+                                    action={() => navigate('/gestionar-prestadores')}
                                 />
                             </Section>
                         </div>

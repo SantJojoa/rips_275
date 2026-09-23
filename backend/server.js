@@ -4,6 +4,7 @@ import cors from 'cors'
 import authRoutes from './routes/auth.js';
 import billsRoutes from './routes/billRoutes.js';
 import userRoutes from './routes/userRoutes.js';
+import prestadorRoutes from './routes/prestadorRoutes.js';
 import db from './models/index.js';
 
 
@@ -29,6 +30,7 @@ if (process.env.NODE_TLS_REJECT_UNAUTHORIZED === '0') {
 app.use('/api/auth', authRoutes);
 app.use('/api/bills', billsRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/prestadores', prestadorRoutes);
 
 
 const PORT = process.env.PORT || 3000;
